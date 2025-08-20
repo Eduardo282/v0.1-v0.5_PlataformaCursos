@@ -1,0 +1,35 @@
+type Query {
+  login(name: String!, email: String!, password: String!): user
+}
+
+type Mutation {
+  signup(
+    name: String!
+    lastname: String!
+    email: String!
+    id_admin: String
+    password: String!
+  ): signup_data
+}
+
+type user {
+  id: String
+  name: String
+  lastname: String
+  email: String
+  id_admin: String
+  active: Int
+  current_role: String
+  last_access: String
+  message: String
+}
+
+type signup_data {
+  id: String
+  message: String
+}
+
+schema {
+  query: Query
+  mutation: Mutation
+}

@@ -1,0 +1,35 @@
+{
+  "name": "backend-plataforma-cursos",
+  "version": "1.0.0",
+  "description": "Backend para plataforma de cursos",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "express",
+    "backend",
+    "api",
+    "cursos"
+  ],
+  "author": "Eduardo",
+  "license": "ISC",
+  "dependencies": {
+    "@graphql-tools/schema": "^10.0.23",
+    "bcryptjs": "^3.0.2",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.0",
+    "express": "^5.1.0",
+    "express-graphql": "^0.12.0",
+    "graphql": "^16.11.0",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.14.2",
+    "subscriptions-transport-ws": "^0.11.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  },
+  "type": "commonjs"
+}
