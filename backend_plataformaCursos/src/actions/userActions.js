@@ -29,7 +29,6 @@ const login = async ({ name, email, password }) => {
       name: user.name,
       lastname: user.lastname ?? null,
       email: user.email,
-      id_admin: user.id_admin ?? null,
       active: 1,
       current_role: "admin",
       last_access: nowIso,
@@ -42,24 +41,32 @@ const login = async ({ name, email, password }) => {
 };
 
 //la estructura correcta es la de abel
-const signup = ({ name, lastname, email, id_admin, password }) => {
+const signup = ({ name, lastname, email, password }) => {
   return new Promise((resolve, reject) => {
     bcrypt.hash(password, 10, (err, contrasenaHasheada) => {
       if (err) return reject(err);
 
-      const query = `INSERT INTO admin_signup(name, lastname, email, id_admin, password, confirm_password) VALUES (?, ?, ?, ?, ?, ?)`;
-      const values = [name, lastname, email, id_admin, contrasenaHasheada, contrasenaHasheada];
+      // id_admin eliminado del insert y del esquema
+      const query = `INSERT INTO admin_signup(name, lastname, email, password, confirm_password) VALUES (?, ?, ?, ?, ?)`;
+      const values = [
+        name,
+        lastname,
+        email,
+        contrasenaHasheada,
+        contrasenaHasheada,
+      ];
 
-      client.query(query, values)
+      client
+        .query(query, values)
         .then(([result]) => {
           resolve({
             id: result.insertId.toString(),
-            message: 'Registro exitoso'
+            message: "Registro exitoso",
           });
         })
         .catch((error) => {
-          console.error('Error en signup:', error);
-          reject(new Error('No se pudo registrar el usuario'));
+          console.error("Error en signup:", error);
+          reject(new Error("No se pudo registrar el usuario"));
         });
     });
   });

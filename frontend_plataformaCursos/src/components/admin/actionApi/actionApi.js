@@ -1,7 +1,7 @@
 import axios from "axios";
 import { API } from "../../utils/http/api_graphql";
 
-const signup = async (name, lastname, email, id_admin, password) => {
+const signup = async (name, lastname, email, password) => {
   return new Promise((resolve, reject) => {
     axios({
       url: API,
@@ -12,8 +12,8 @@ const signup = async (name, lastname, email, id_admin, password) => {
       },
       data: {
         query: `
-          mutation signup($name: String!, $lastname: String!, $email: String!, $id_admin: String, $password: String!) {
-            signup(name: $name, lastname: $lastname, email: $email, id_admin: $id_admin, password: $password) {
+          mutation signup($name: String!, $lastname: String!, $email: String!, $password: String!) {
+            signup(name: $name, lastname: $lastname, email: $email, password: $password) {
               id
               message
             }
@@ -22,7 +22,6 @@ const signup = async (name, lastname, email, id_admin, password) => {
           name,
           lastname,
           email,
-          id_admin,
           password,
         },
       },
@@ -53,7 +52,6 @@ const login = async (name, email, password) => {
               name
               lastname
               email
-              id_admin
               active
               current_role
               last_access

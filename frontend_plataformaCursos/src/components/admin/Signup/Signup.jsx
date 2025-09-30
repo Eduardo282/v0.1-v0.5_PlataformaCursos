@@ -10,7 +10,6 @@ class Signup extends Component {
       name: "",
       lastname: "",
       email: "",
-      id_admin: "",
       password: "",
       confirm_password: "",
       error: "",
@@ -56,8 +55,7 @@ class Signup extends Component {
   handleSubmit = async (e) => {
     e.preventDefault();
     console.log("[FRONTEND] handleSubmit(Signup) ejecutado");
-    const { name, lastname, email, id_admin, password, confirm_password } =
-      this.state;
+    const { name, lastname, email, password, confirm_password } = this.state;
     if (!name || !lastname || !email || !password || !confirm_password) {
       this.setState({ error: "Todos los campos son obligatorios" });
       return;
@@ -72,14 +70,7 @@ class Signup extends Component {
       let watchdog = setTimeout(() => {
         console.warn("[FRONTEND] Signup sigue pendiente tras 5s...");
       }, 5000);
-      const safeIdAdmin = id_admin && id_admin.trim() !== "" ? id_admin : null;
-      const response = await actionApi.signup(
-        name,
-        lastname,
-        email,
-        safeIdAdmin,
-        password
-      );
+      const response = await actionApi.signup(name, lastname, email, password);
       clearTimeout(watchdog);
       console.timeEnd("signupReq");
       // Log completo para diagnosticar cualquier discrepancia
@@ -140,7 +131,6 @@ class Signup extends Component {
       name,
       lastname,
       email,
-      id_admin,
       password,
       confirm_password,
       error,
@@ -207,16 +197,7 @@ class Signup extends Component {
                       required
                     />
                   </div>
-                  <div className="glass-input-group">
-                    <i className="bx bx-id-card"></i>
-                    <input
-                      type="text"
-                      name="id_admin"
-                      placeholder="ID Empleado (opcional)"
-                      value={id_admin}
-                      onChange={this.handleInputChange}
-                    />
-                  </div>
+                  {/* Campo de ID de empleado eliminado */}
                   <div className="glass-input-group">
                     <i className="bx bxs-lock-alt"></i>
                     <input

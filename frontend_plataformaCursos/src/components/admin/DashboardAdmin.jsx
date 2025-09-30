@@ -168,8 +168,8 @@ class DashboardAdmin extends Component {
       this.setState({
         modulosDropdownOpen: true,
         modulosDropdownCoords: {
-          top: rect.bottom + window.scrollY,
-          left: rect.left + window.scrollX,
+          top: rect.bottom,
+          left: rect.left,
         },
       });
     } else {
@@ -402,11 +402,13 @@ class DashboardAdmin extends Component {
               </a>
               <div
                 style={{
-                  flex: 1,
+                  position: "absolute",
+                  left: "50%",
+                  top: "35%",
+                  transform: "translate(-50%, -50%)",
                   display: "flex",
+                  alignItems: "center",
                   justifyContent: "center",
-                  marginBottom: 30,
-                  marginRight: 200,
                 }}
               >
                 <img
@@ -419,6 +421,7 @@ class DashboardAdmin extends Component {
                     boxShadow: "none",
                     filter: "none",
                     background: "none",
+                    margin: "auto",
                   }}
                 />
               </div>

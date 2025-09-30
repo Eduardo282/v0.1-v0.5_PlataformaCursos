@@ -1,12 +1,11 @@
 const actions = require("../actions/userActions");
 
-const signup = async (_, { name, lastname, email, id_admin, password }) => {
+const signup = async (_, { name, lastname, email, password }) => {
   try {
     const signup_data = await actions.signup({
       name,
       lastname,
       email,
-      id_admin,
       password,
     });
     console.log("[GRAPHQL] Respuesta enviada al frontend:", signup_data);
