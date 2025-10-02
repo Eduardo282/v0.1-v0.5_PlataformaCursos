@@ -22,6 +22,7 @@ import {
   FaEdit,
   FaTrash,
   FaCheckCircle,
+  FaPlus,
 } from "react-icons/fa";
 import { LineChart } from "@mui/x-charts";
 
@@ -95,6 +96,59 @@ class DashboardAdmin extends Component {
       modulosDropdownOpen: false, // <-- Estado para el dropdown
       modulosDropdownCoords: { top: 0, left: 0 },
       coursesSearch: "",
+      // Estados para modales de cursos
+      showViewModal: false,
+      showEditModal: false,
+      showDeleteModal: false,
+      showAddModal: false,
+      selectedCourse: null,
+      editFormData: {
+        titulo: "",
+        autor: "",
+        categoria: "",
+        estudiantes: 0,
+        precio: 0,
+        rating: 0,
+        estado: "",
+      },
+      addFormData: {
+        titulo: "",
+        autor: "",
+        categoria: "",
+        precio: 0,
+        estado: "Activo",
+      },
+      // ===== Gestión de Contenido (reemplaza Próximos Eventos) =====
+      contentActiveTab: "Banners", // Banners | Testimonios | FAQ
+      contentBanners: [
+        {
+          id: 1,
+          titulo: "Lanza tu carrera",
+          url: "https://tusitio.com/cursos",
+          imagen:
+            "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=600&q=60",
+        },
+      ],
+      contentTestimonios: [
+        {
+          id: 1,
+          nombre: "María López",
+          mensaje:
+            "El curso me ayudó a certificar a mi equipo rápidamente. ¡Excelente!",
+        },
+      ],
+      contentFAQ: [
+        {
+          id: 1,
+          pregunta: "¿Cómo obtengo mi certificado?",
+          respuesta:
+            "Al completar el curso y aprobar el examen final, podrás descargarlo desde tu perfil.",
+        },
+      ],
+      contentShowModal: false,
+      contentDeleteModal: false,
+      contentEditingIndex: null,
+      contentFormData: {},
     };
     this.handleSidebarOpen = this.handleSidebarOpen.bind(this);
     this.handleSidebarClose = this.handleSidebarClose.bind(this);
@@ -177,12 +231,711 @@ class DashboardAdmin extends Component {
     }
   }
 
+  // Funciones para Ver Curso
+  handleViewCourse = (course) => {
+    this.setState({
+      showViewModal: true,
+      selectedCourse: course,
+    });
+  };
+
+  handleCloseViewModal = () => {
+    this.setState({
+      showViewModal: false,
+      selectedCourse: null,
+    });
+  };
+
+  // Funciones para Editar Curso
+  handleEditCourse = (course) => {
+    this.setState({
+      showEditModal: true,
+      selectedCourse: course,
+      editFormData: {
+        titulo: course.titulo,
+        autor: course.autor,
+        categoria: course.categoria,
+        estudiantes: course.estudiantes,
+        precio: course.precio,
+        rating: course.rating,
+        estado: course.estado,
+      },
+    });
+  };
+
+  handleCloseEditModal = () => {
+    this.setState({
+      showEditModal: false,
+      selectedCourse: null,
+      editFormData: {
+        titulo: "",
+        autor: "",
+        categoria: "",
+        estudiantes: 0,
+        precio: 0,
+        rating: 0,
+        estado: "",
+      },
+    });
+  };
+
+  handleEditInputChange = (e) => {
+    const { name, value } = e.target;
+    this.setState((prevState) => ({
+      editFormData: {
+        ...prevState.editFormData,
+        [name]: value,
+      },
+    }));
+  };
+
+  handleSaveEdit = (e) => {
+    e.preventDefault();
+    // Aquí irá la llamada a tu API para actualizar el curso
+    console.log("Guardando cambios:", this.state.editFormData);
+    alert("Curso actualizado exitosamente!");
+    this.handleCloseEditModal();
+  };
+
+  // Funciones para Eliminar Curso
+  handleDeleteCourse = (course) => {
+    this.setState({
+      showDeleteModal: true,
+      selectedCourse: course,
+    });
+  };
+
+  handleCloseDeleteModal = () => {
+    this.setState({
+      showDeleteModal: false,
+      selectedCourse: null,
+    });
+  };
+
+  handleConfirmDelete = () => {
+    // Aquí irá la llamada a tu API para eliminar el curso
+    console.log("Eliminando curso:", this.state.selectedCourse);
+    alert("Curso eliminado exitosamente!");
+    this.handleCloseDeleteModal();
+  };
+
+  // ===== Gestión de Contenido: helpers y acciones =====
+  setContentTab = (tab) => {
+    this.setState({ contentActiveTab: tab });
+  };
+
+  getEmptyContentForm = (tab) => {
+    if (tab === "Banners") return { titulo: "", url: "", imagen: "" };
+    if (tab === "Testimonios") return { nombre: "", mensaje: "" };
+    if (tab === "FAQ") return { pregunta: "", respuesta: "" };
+    return {};
+  };
+
+  getContentList = (tab) => {
+    if (tab === "Banners") return this.state.contentBanners;
+    if (tab === "Testimonios") return this.state.contentTestimonios;
+    if (tab === "FAQ") return this.state.contentFAQ;
+    return [];
+  };
+
+  setContentList = (tab, list) => {
+    if (tab === "Banners") this.setState({ contentBanners: list });
+    if (tab === "Testimonios") this.setState({ contentTestimonios: list });
+    if (tab === "FAQ") this.setState({ contentFAQ: list });
+  };
+
+  openContentAdd = () => {
+    const { contentActiveTab } = this.state;
+    this.setState({
+      contentShowModal: true,
+      contentEditingIndex: null,
+      contentFormData: this.getEmptyContentForm(contentActiveTab),
+    });
+  };
+
+  openContentEdit = (index) => {
+    const { contentActiveTab } = this.state;
+    const list = this.getContentList(contentActiveTab);
+    const item = list[index];
+    this.setState({
+      contentShowModal: true,
+      contentEditingIndex: index,
+      contentFormData: { ...item },
+    });
+  };
+
+  closeContentModal = () => {
+    this.setState({
+      contentShowModal: false,
+      contentFormData: {},
+      contentEditingIndex: null,
+    });
+  };
+
+  handleContentInputChange = (e) => {
+    const { name, value } = e.target;
+    this.setState((prev) => ({
+      contentFormData: { ...prev.contentFormData, [name]: value },
+    }));
+  };
+
+  saveContentItem = (e) => {
+    e.preventDefault();
+    const { contentActiveTab, contentEditingIndex, contentFormData } =
+      this.state;
+    const list = [...this.getContentList(contentActiveTab)];
+    if (contentActiveTab === "Banners") {
+      if (!contentFormData.titulo || !contentFormData.url) {
+        alert("Completa título y URL");
+        return;
+      }
+    }
+    if (contentActiveTab === "Testimonios") {
+      if (!contentFormData.nombre || !contentFormData.mensaje) {
+        alert("Completa nombre y mensaje");
+        return;
+      }
+    }
+    if (contentActiveTab === "FAQ") {
+      if (!contentFormData.pregunta || !contentFormData.respuesta) {
+        alert("Completa pregunta y respuesta");
+        return;
+      }
+    }
+
+    if (contentEditingIndex === null || contentEditingIndex === undefined) {
+      // agregar
+      const newItem = { id: Date.now(), ...contentFormData };
+      list.push(newItem);
+    } else {
+      // editar
+      list[contentEditingIndex] = {
+        ...list[contentEditingIndex],
+        ...contentFormData,
+      };
+    }
+    this.setContentList(contentActiveTab, list);
+    this.closeContentModal();
+  };
+
+  openContentDelete = (index) => {
+    this.setState({ contentDeleteModal: true, contentEditingIndex: index });
+  };
+
+  closeContentDelete = () => {
+    this.setState({ contentDeleteModal: false, contentEditingIndex: null });
+  };
+
+  confirmContentDelete = () => {
+    const { contentActiveTab, contentEditingIndex } = this.state;
+    const list = [...this.getContentList(contentActiveTab)];
+    if (contentEditingIndex !== null && contentEditingIndex >= 0) {
+      list.splice(contentEditingIndex, 1);
+      this.setContentList(contentActiveTab, list);
+    }
+    this.closeContentDelete();
+  };
+
+  renderContentFormFields = () => {
+    const { contentActiveTab, contentFormData } = this.state;
+    if (contentActiveTab === "Banners") {
+      return (
+        <>
+          <div className="form-group-modal">
+            <label>Título *</label>
+            <input
+              type="text"
+              name="titulo"
+              value={contentFormData.titulo || ""}
+              onChange={this.handleContentInputChange}
+              required
+            />
+          </div>
+          <div className="form-group-modal">
+            <label>URL *</label>
+            <input
+              type="url"
+              name="url"
+              value={contentFormData.url || ""}
+              onChange={this.handleContentInputChange}
+              placeholder="https://..."
+              required
+            />
+          </div>
+          <div className="form-group-modal" style={{ gridColumn: "1 / -1" }}>
+            <label>Imagen (URL)</label>
+            <input
+              type="url"
+              name="imagen"
+              value={contentFormData.imagen || ""}
+              onChange={this.handleContentInputChange}
+              placeholder="https://..."
+            />
+          </div>
+        </>
+      );
+    }
+    if (contentActiveTab === "Testimonios") {
+      return (
+        <>
+          <div className="form-group-modal">
+            <label>Nombre *</label>
+            <input
+              type="text"
+              name="nombre"
+              value={contentFormData.nombre || ""}
+              onChange={this.handleContentInputChange}
+              required
+            />
+          </div>
+          <div className="form-group-modal" style={{ gridColumn: "1 / -1" }}>
+            <label>Mensaje *</label>
+            <input
+              type="text"
+              name="mensaje"
+              value={contentFormData.mensaje || ""}
+              onChange={this.handleContentInputChange}
+              required
+            />
+          </div>
+        </>
+      );
+    }
+    if (contentActiveTab === "FAQ") {
+      return (
+        <>
+          <div className="form-group-modal" style={{ gridColumn: "1 / -1" }}>
+            <label>Pregunta *</label>
+            <input
+              type="text"
+              name="pregunta"
+              value={contentFormData.pregunta || ""}
+              onChange={this.handleContentInputChange}
+              required
+            />
+          </div>
+          <div className="form-group-modal" style={{ gridColumn: "1 / -1" }}>
+            <label>Respuesta *</label>
+            <input
+              type="text"
+              name="respuesta"
+              value={contentFormData.respuesta || ""}
+              onChange={this.handleContentInputChange}
+              required
+            />
+          </div>
+        </>
+      );
+    }
+    return null;
+  };
+
+  // Funciones para Agregar Curso
+  handleAddCourse = () => {
+    this.setState({
+      showAddModal: true,
+      addFormData: {
+        titulo: "",
+        autor: "",
+        categoria: "",
+        precio: 0,
+        estado: "Activo",
+      },
+    });
+  };
+
+  handleCloseAddModal = () => {
+    this.setState({
+      showAddModal: false,
+      addFormData: {
+        titulo: "",
+        autor: "",
+        categoria: "",
+        precio: 0,
+        estado: "Activo",
+      },
+    });
+  };
+
+  handleAddInputChange = (e) => {
+    const { name, value } = e.target;
+    this.setState((prevState) => ({
+      addFormData: {
+        ...prevState.addFormData,
+        [name]: value,
+      },
+    }));
+  };
+
+  handleSaveNewCourse = (e) => {
+    e.preventDefault();
+    // Aquí irá la llamada a tu API para crear el curso
+    console.log("Creando nuevo curso:", this.state.addFormData);
+    alert("Curso creado exitosamente!");
+    this.handleCloseAddModal();
+  };
+
   render() {
     const user = this.props.router?.location?.state?.user || this.props.user;
-    const { hora, sidebarOpen } = this.state;
+    const {
+      hora,
+      sidebarOpen,
+      showViewModal,
+      showEditModal,
+      showDeleteModal,
+      showAddModal,
+      selectedCourse,
+      editFormData,
+      addFormData,
+    } = this.state;
     const { statsIndex, statsCards } = this.state;
     return (
       <>
+        {/* MODAL VER CURSO */}
+        {showViewModal && selectedCourse && (
+          <div
+            className="course-modal-overlay"
+            onClick={this.handleCloseViewModal}
+          >
+            <div className="course-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="course-modal-header">
+                <h3>Detalles del Curso</h3>
+                <button
+                  className="close-modal-btn"
+                  onClick={this.handleCloseViewModal}
+                >
+                  <i className="bx bx-x"></i>
+                </button>
+              </div>
+              <div className="course-modal-content">
+                <div className="course-detail-row">
+                  <img
+                    src={selectedCourse.img}
+                    alt="curso"
+                    className="course-detail-img"
+                  />
+                  <div>
+                    <h4 style={{ color: "#E6F1FF", marginBottom: 8 }}>
+                      {selectedCourse.titulo}
+                    </h4>
+                    <p style={{ color: "#B7CCE9", fontSize: 14 }}>
+                      Impartido por: {selectedCourse.autor}
+                    </p>
+                  </div>
+                </div>
+                <div className="course-detail-grid">
+                  <div className="course-detail-item">
+                    <span className="detail-label">Categoría:</span>
+                    <span className="detail-value">
+                      {selectedCourse.categoria}
+                    </span>
+                  </div>
+                  <div className="course-detail-item">
+                    <span className="detail-label">Estudiantes:</span>
+                    <span className="detail-value">
+                      {selectedCourse.estudiantes}
+                    </span>
+                  </div>
+                  <div className="course-detail-item">
+                    <span className="detail-label">Precio:</span>
+                    <span className="detail-value">
+                      ${selectedCourse.precio.toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="course-detail-item">
+                    <span className="detail-label">Rating:</span>
+                    <span className="detail-value">
+                      ⭐ {selectedCourse.rating}
+                    </span>
+                  </div>
+                  <div className="course-detail-item">
+                    <span className="detail-label">Estado:</span>
+                    <span className="detail-value">
+                      {selectedCourse.estado}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL EDITAR CURSO */}
+        {showEditModal && selectedCourse && (
+          <div
+            className="course-modal-overlay"
+            onClick={this.handleCloseEditModal}
+          >
+            <div
+              className="course-modal course-modal-large"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="course-modal-header">
+                <h3>Editar Curso</h3>
+                <button
+                  className="close-modal-btn"
+                  onClick={this.handleCloseEditModal}
+                >
+                  <i className="bx bx-x"></i>
+                </button>
+              </div>
+              <form
+                onSubmit={this.handleSaveEdit}
+                className="course-modal-content"
+              >
+                <div className="course-edit-grid">
+                  <div className="form-group-modal">
+                    <label>Título del Curso</label>
+                    <input
+                      type="text"
+                      name="titulo"
+                      value={editFormData.titulo}
+                      onChange={this.handleEditInputChange}
+                      required
+                    />
+                  </div>
+                  <div className="form-group-modal">
+                    <label>Expositor (Quien lo imparte)</label>
+                    <input
+                      type="text"
+                      name="autor"
+                      value={editFormData.autor}
+                      onChange={this.handleEditInputChange}
+                      required
+                    />
+                  </div>
+                  <div className="form-group-modal">
+                    <label>Categoría</label>
+                    <select
+                      name="categoria"
+                      value={editFormData.categoria}
+                      onChange={this.handleEditInputChange}
+                      required
+                    >
+                      <option value="">Selecciona una categoría</option>
+                      <option value="Seguridad Laboral">
+                        Seguridad Laboral
+                      </option>
+                      <option value="Fiscal">Fiscal</option>
+                      <option value="Tecnología">Tecnología</option>
+                      <option value="Liderazgo">Liderazgo</option>
+                      <option value="Marketing">Marketing</option>
+                    </select>
+                  </div>
+                  <div className="form-group-modal">
+                    <label>Precio ($)</label>
+                    <input
+                      type="number"
+                      name="precio"
+                      value={editFormData.precio}
+                      onChange={this.handleEditInputChange}
+                      min="0"
+                      required
+                    />
+                  </div>
+                  <div className="form-group-modal">
+                    <label>Estado</label>
+                    <select
+                      name="estado"
+                      value={editFormData.estado}
+                      onChange={this.handleEditInputChange}
+                      required
+                    >
+                      <option value="Activo">Activo</option>
+                      <option value="Inactivo">Inactivo</option>
+                      <option value="En revisión">En revisión</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="modal-actions">
+                  <button
+                    type="button"
+                    className="btn-cancel"
+                    onClick={this.handleCloseEditModal}
+                  >
+                    Cancelar
+                  </button>
+                  <button type="submit" className="btn-save">
+                    Guardar Cambios
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL ELIMINAR CURSO */}
+        {showDeleteModal && selectedCourse && (
+          <div
+            className="course-modal-overlay"
+            onClick={this.handleCloseDeleteModal}
+          >
+            <div
+              className="course-modal course-modal-small"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="course-modal-header">
+                <h3>Confirmar Eliminación</h3>
+                <button
+                  className="close-modal-btn"
+                  onClick={this.handleCloseDeleteModal}
+                >
+                  <i className="bx bx-x"></i>
+                </button>
+              </div>
+              <div className="course-modal-content">
+                <div className="delete-warning">
+                  <FaTrash
+                    size={48}
+                    style={{ color: "#e74c3c", marginBottom: 16 }}
+                  />
+                  <p
+                    style={{ color: "#E6F1FF", fontSize: 16, marginBottom: 12 }}
+                  >
+                    ¿Estás seguro de que deseas eliminar este curso?
+                  </p>
+                  <p
+                    style={{ color: "#B7CCE9", fontSize: 14, marginBottom: 8 }}
+                  >
+                    <strong>{selectedCourse.titulo}</strong>
+                  </p>
+                  <p style={{ color: "#c0392b", fontSize: 13 }}>
+                    Esta acción no se puede deshacer
+                  </p>
+                </div>
+                <div className="modal-actions">
+                  <button
+                    className="btn-cancel"
+                    onClick={this.handleCloseDeleteModal}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    className="btn-delete"
+                    onClick={this.handleConfirmDelete}
+                  >
+                    Eliminar Curso
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL AGREGAR CURSO */}
+        {showAddModal && (
+          <div
+            className="course-modal-overlay"
+            onClick={this.handleCloseAddModal}
+          >
+            <div
+              className="course-modal course-modal-large"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="course-modal-header">
+                <h3>Agregar Nuevo Curso</h3>
+                <button
+                  className="close-modal-btn"
+                  onClick={this.handleCloseAddModal}
+                >
+                  <i className="bx bx-x"></i>
+                </button>
+              </div>
+              <form
+                onSubmit={this.handleSaveNewCourse}
+                className="course-modal-content"
+              >
+                <div className="course-edit-grid">
+                  <div className="form-group-modal">
+                    <label>Título del Curso *</label>
+                    <input
+                      type="text"
+                      name="titulo"
+                      value={addFormData.titulo}
+                      onChange={this.handleAddInputChange}
+                      placeholder="Ej: Introducción a React"
+                      required
+                    />
+                  </div>
+                  <div className="form-group-modal">
+                    <label>Expositor (Quien lo imparte) *</label>
+                    <input
+                      type="text"
+                      name="autor"
+                      value={addFormData.autor}
+                      onChange={this.handleAddInputChange}
+                      placeholder="Ej: Dr. Juan Pérez"
+                      required
+                    />
+                  </div>
+                  <div className="form-group-modal">
+                    <label>Categoría *</label>
+                    <select
+                      name="categoria"
+                      value={addFormData.categoria}
+                      onChange={this.handleAddInputChange}
+                      required
+                    >
+                      <option value="">Selecciona una categoría</option>
+                      <option value="Seguridad Laboral">
+                        Seguridad Laboral
+                      </option>
+                      <option value="Fiscal">Fiscal</option>
+                      <option value="Tecnología">Tecnología</option>
+                      <option value="Liderazgo">Liderazgo</option>
+                      <option value="Marketing">Marketing</option>
+                    </select>
+                  </div>
+                  <div className="form-group-modal">
+                    <label>Precio ($) *</label>
+                    <input
+                      type="number"
+                      name="precio"
+                      value={addFormData.precio}
+                      onChange={this.handleAddInputChange}
+                      min="0"
+                      placeholder="0"
+                      required
+                    />
+                  </div>
+                  <div className="form-group-modal">
+                    <label>Estado *</label>
+                    <select
+                      name="estado"
+                      value={addFormData.estado}
+                      onChange={this.handleAddInputChange}
+                      required
+                    >
+                      <option value="Activo">Activo</option>
+                      <option value="Inactivo">Inactivo</option>
+                      <option value="En revisión">En revisión</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="add-course-note">
+                  <i
+                    className="bx bx-info-circle"
+                    style={{ marginRight: 8 }}
+                  ></i>
+                  <span>Los campos marcados con * son obligatorios</span>
+                </div>
+                <div className="modal-actions">
+                  <button
+                    type="button"
+                    className="btn-cancel"
+                    onClick={this.handleCloseAddModal}
+                  >
+                    Cancelar
+                  </button>
+                  <button type="submit" className="btn-save">
+                    Crear Curso
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
         {/* Sidebar oculto y pestaña, fuera del flujo principal */}
         <div>
           {/* Overlay oscuro cuando sidebar está abierto */}
@@ -233,7 +986,7 @@ class DashboardAdmin extends Component {
                   color: "var(--text-primary)",
                 }}
               >
-                {user?.name || "Admin"}
+                {user?.alias || user?.name || "Admin"}
               </div>
               <div
                 style={{
@@ -513,7 +1266,7 @@ class DashboardAdmin extends Component {
               <span
                 style={{ fontWeight: 600, color: "#ffffffff", fontSize: 16 }}
               >
-                {user?.name}
+                {user?.alias || user?.name || "Admin"}
               </span>
             </div>
           </nav>
@@ -579,6 +1332,36 @@ class DashboardAdmin extends Component {
                   <div
                     style={{ display: "flex", alignItems: "center", gap: 10 }}
                   >
+                    <button
+                      title="Agregar Curso"
+                      onClick={this.handleAddCourse}
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 8,
+                        background: "linear-gradient(135deg, #00e5ff, #1976d2)",
+                        border: "none",
+                        borderRadius: 10,
+                        padding: "10px 18px",
+                        cursor: "pointer",
+                        fontWeight: 700,
+                        color: "#fff",
+                        boxShadow: "0 4px 12px rgba(0, 229, 255, 0.3)",
+                        transition: "all 0.3s ease",
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.transform = "translateY(-2px)";
+                        e.currentTarget.style.boxShadow =
+                          "0 6px 16px rgba(0, 229, 255, 0.4)";
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.transform = "translateY(0)";
+                        e.currentTarget.style.boxShadow =
+                          "0 4px 12px rgba(0, 229, 255, 0.3)";
+                      }}
+                    >
+                      <FaPlus /> Agregar Curso
+                    </button>
                     <div style={{ position: "relative" }}>
                       <FaSearch
                         style={{
@@ -772,15 +1555,24 @@ class DashboardAdmin extends Component {
                             </td>
                             <td>
                               <div style={{ display: "flex", gap: 10 }}>
-                                <button className="icon-btn" title="Ver">
+                                <button
+                                  className="icon-btn"
+                                  title="Ver"
+                                  onClick={() => this.handleViewCourse(r)}
+                                >
                                   <FaEye />
                                 </button>
-                                <button className="icon-btn" title="Editar">
+                                <button
+                                  className="icon-btn"
+                                  title="Editar"
+                                  onClick={() => this.handleEditCourse(r)}
+                                >
                                   <FaEdit />
                                 </button>
                                 <button
                                   className="icon-btn danger"
                                   title="Eliminar"
+                                  onClick={() => this.handleDeleteCourse(r)}
                                 >
                                   <FaTrash />
                                 </button>
@@ -798,63 +1590,110 @@ class DashboardAdmin extends Component {
                   style={{
                     color: "#E6F1FF",
                     fontWeight: 600,
-                    marginBottom: 16,
+                    marginBottom: 12,
                   }}
                 >
-                  Próximos Eventos
+                  Gestión de Contenido
                 </h3>
-                <div className="evento-flip-card" tabIndex={0}>
-                  <div className="evento-flip-card-inner">
-                    <div className="evento-flip-card-front">
-                      <div style={{ fontWeight: 600, color: "#E6F1FF" }}>
-                        Conferencia: Futuro del Trabajo Post-COVID
-                      </div>
-                      <div style={{ color: "#B7CCE9", fontSize: 14 }}>
-                        Auditorio Central CDMX · 2/19/2024
-                      </div>
-                      <div
-                        style={{
-                          color: "#B7CCE9",
-                          fontWeight: 600,
-                          marginTop: 8,
-                        }}
+                <div className="content-panel">
+                  <div className="content-tabs">
+                    {[
+                      { key: "Banners", label: "Banners/Portadas" },
+                      { key: "Testimonios", label: "Testimonios" },
+                      { key: "FAQ", label: "FAQ" },
+                    ].map((t) => (
+                      <button
+                        key={t.key}
+                        className={
+                          "content-tab" +
+                          (this.state.contentActiveTab === t.key
+                            ? " active"
+                            : "")
+                        }
+                        onClick={() => this.setContentTab(t.key)}
                       >
-                        156/200 cupos
-                      </div>
-                    </div>
-                    <div className="evento-flip-card-back">
-                      <img
-                        src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=facearea&w=400&h=110"
-                        alt="Evento"
-                      />
-                    </div>
+                        {t.label}
+                      </button>
+                    ))}
+                    <button
+                      className="content-add"
+                      onClick={this.openContentAdd}
+                    >
+                      <FaPlus style={{ marginRight: 6 }} /> Agregar
+                    </button>
                   </div>
-                </div>
-                <div className="evento-flip-card" tabIndex={0}>
-                  <div className="evento-flip-card-inner">
-                    <div className="evento-flip-card-front">
-                      <div style={{ fontWeight: 600, color: "#E6F1FF" }}>
-                        Webinar: Actualización Fiscal 2024
-                      </div>
-                      <div style={{ color: "#B7CCE9", fontSize: 14 }}>
-                        Online · 2/24/2024
-                      </div>
-                      <div
-                        style={{
-                          color: "#B7CCE9",
-                          fontWeight: 600,
-                          marginTop: 8,
-                        }}
-                      >
-                        287/500 cupos
-                      </div>
-                    </div>
-                    <div className="evento-flip-card-back">
-                      <img
-                        src="https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=facearea&w=400&h=110"
-                        alt="Evento"
-                      />
-                    </div>
+                  <div className="content-list">
+                    {this.getContentList(this.state.contentActiveTab).length ===
+                    0 ? (
+                      <div className="content-empty">No hay elementos aún</div>
+                    ) : (
+                      this.getContentList(this.state.contentActiveTab).map(
+                        (item, idx) => (
+                          <div key={item.id || idx} className="content-item">
+                            {this.state.contentActiveTab === "Banners" && (
+                              <div className="content-item-media">
+                                {item.imagen ? (
+                                  <img src={item.imagen} alt="banner" />
+                                ) : (
+                                  <div className="content-item-placeholder">
+                                    Sin imagen
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                            <div className="content-item-body">
+                              {this.state.contentActiveTab === "Banners" && (
+                                <>
+                                  <div className="content-item-title">
+                                    {item.titulo}
+                                  </div>
+                                  <div className="content-item-sub">
+                                    {item.url}
+                                  </div>
+                                </>
+                              )}
+                              {this.state.contentActiveTab ===
+                                "Testimonios" && (
+                                <>
+                                  <div className="content-item-title">
+                                    {item.nombre}
+                                  </div>
+                                  <div className="content-item-sub">
+                                    {item.mensaje}
+                                  </div>
+                                </>
+                              )}
+                              {this.state.contentActiveTab === "FAQ" && (
+                                <>
+                                  <div className="content-item-title">
+                                    {item.pregunta}
+                                  </div>
+                                  <div className="content-item-sub">
+                                    {item.respuesta}
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                            <div className="content-item-actions">
+                              <button
+                                className="icon-btn"
+                                title="Editar"
+                                onClick={() => this.openContentEdit(idx)}
+                              >
+                                <FaEdit />
+                              </button>
+                              <button
+                                className="icon-btn danger"
+                                title="Eliminar"
+                                onClick={() => this.openContentDelete(idx)}
+                              >
+                                <FaTrash />
+                              </button>
+                            </div>
+                          </div>
+                        )
+                      )
+                    )}
                   </div>
                 </div>
                 {/* Placeholder for a chart/animation */}
@@ -1223,6 +2062,103 @@ class DashboardAdmin extends Component {
             </div>
           </div>
         </div>
+        {/* ===== Modales de Gestión de Contenido ===== */}
+        {this.state.contentShowModal && (
+          <div
+            className="course-modal-overlay"
+            onClick={this.closeContentModal}
+          >
+            <div
+              className="course-modal course-modal-large"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="course-modal-header">
+                <h3>
+                  {this.state.contentEditingIndex === null
+                    ? `Agregar ${this.state.contentActiveTab}`
+                    : `Editar ${this.state.contentActiveTab}`}
+                </h3>
+                <button
+                  className="close-modal-btn"
+                  onClick={this.closeContentModal}
+                >
+                  <i className="bx bx-x"></i>
+                </button>
+              </div>
+              <form
+                onSubmit={this.saveContentItem}
+                className="course-modal-content"
+              >
+                <div className="course-edit-grid">
+                  {this.renderContentFormFields()}
+                </div>
+                <div className="modal-actions">
+                  <button
+                    type="button"
+                    className="btn-cancel"
+                    onClick={this.closeContentModal}
+                  >
+                    Cancelar
+                  </button>
+                  <button type="submit" className="btn-save">
+                    Guardar
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+        {this.state.contentDeleteModal && (
+          <div
+            className="course-modal-overlay"
+            onClick={this.closeContentDelete}
+          >
+            <div
+              className="course-modal course-modal-small"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="course-modal-header">
+                <h3>Eliminar {this.state.contentActiveTab}</h3>
+                <button
+                  className="close-modal-btn"
+                  onClick={this.closeContentDelete}
+                >
+                  <i className="bx bx-x"></i>
+                </button>
+              </div>
+              <div className="course-modal-content">
+                <div className="delete-warning">
+                  <FaTrash
+                    size={48}
+                    style={{ color: "#e74c3c", marginBottom: 16 }}
+                  />
+                  <p
+                    style={{ color: "#E6F1FF", fontSize: 16, marginBottom: 12 }}
+                  >
+                    ¿Seguro que deseas eliminar este elemento?
+                  </p>
+                  <p style={{ color: "#c0392b", fontSize: 13 }}>
+                    Esta acción no se puede deshacer
+                  </p>
+                </div>
+                <div className="modal-actions">
+                  <button
+                    className="btn-cancel"
+                    onClick={this.closeContentDelete}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    className="btn-delete"
+                    onClick={this.confirmContentDelete}
+                  >
+                    Eliminar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         <style>{`
 :root {
   /* App background with dark neon accents */
@@ -1820,27 +2756,36 @@ class DashboardAdmin extends Component {
   font-size: 14px;
 }
 .courses-table-wrap .courses-table tbody td {
-  padding: 14px 16px;
+  padding: 18px 16px;
   border-bottom: 1px solid rgba(255,255,255,0.08);
   color: var(--text-secondary);
   font-size: 14px;
+  vertical-align: middle;
 }
 .courses-table-wrap .pill {
-  display: inline-block;
-  padding: 4px 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 14px;
   border-radius: 999px;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
+  white-space: nowrap;
+  letter-spacing: 0.3px;
+  line-height: 1.4;
 }
 .courses-table-wrap .pill.cat {
-  background: rgba(0,229,255,0.10);
+  background: rgba(0,229,255,0.12);
   color: #7eeaff;
-  border: 1px solid rgba(0,229,255,0.25);
+  border: 1.5px solid rgba(0,229,255,0.30);
+  padding: 7px 16px;
 }
 .courses-table-wrap .pill.ok {
-  background: rgba(79,217,100,0.12);
+  background: rgba(79,217,100,0.15);
   color: #7ef7a0;
-  border: 1px solid rgba(79,217,100,0.35);
+  border: 1.5px solid rgba(79,217,100,0.40);
+  padding: 7px 12px;
+  gap: 6px;
 }
 .courses-table-wrap .icon-btn {
   background: rgba(255,255,255,0.06);
@@ -1857,6 +2802,330 @@ class DashboardAdmin extends Component {
 /* Evitar que la regla global de tabla pinte bordes aquí */
 .courses-table-wrap table, .courses-table-wrap th, .courses-table-wrap td {
   border: none !important;
+}
+
+/* ========== MODALES DE CURSOS ========== */
+.course-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.course-modal {
+  background: rgba(30, 36, 50, 0.95);
+  backdrop-filter: blur(15px);
+  border-radius: 16px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  animation: slideUp 0.4s ease-out;
+}
+
+.course-modal-large {
+  max-width: 800px;
+}
+
+.course-modal-small {
+  max-width: 450px;
+}
+
+.course-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 28px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.course-modal-header h3 {
+  color: #E6F1FF;
+  font-size: 22px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.course-modal-content {
+  padding: 28px;
+}
+
+.course-detail-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.course-detail-img {
+  width: 70px;
+  height: 70px;
+  border-radius: 12px;
+  object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.course-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.course-detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.detail-label {
+  color: #B7CCE9;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.detail-value {
+  color: #E6F1FF;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* Formulario de Edición */
+.course-edit-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.form-group-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group-modal label {
+  color: #B7CCE9;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.form-group-modal input,
+.form-group-modal select {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 12px 14px;
+  color: #E6F1FF;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.form-group-modal input:focus,
+.form-group-modal select:focus {
+  border-color: rgba(0, 229, 255, 0.5);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.form-group-modal select option {
+  background: #1e2432;
+  color: #E6F1FF;
+}
+
+/* Modal de Eliminación */
+.delete-warning {
+  text-align: center;
+  padding: 20px 0;
+}
+
+/* Botones del Modal */
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.btn-cancel,
+.btn-save,
+.btn-delete {
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.btn-cancel {
+  background: rgba(255, 255, 255, 0.06);
+  color: #B7CCE9;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.btn-cancel:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #E6F1FF;
+}
+
+.btn-save {
+  background: rgba(0, 229, 255, 0.2);
+  color: #7eeaff;
+  border: 1px solid rgba(0, 229, 255, 0.4);
+}
+
+.btn-save:hover {
+  background: rgba(0, 229, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+.btn-delete {
+  background: rgba(231, 76, 60, 0.2);
+  color: #e74c3c;
+  border: 1px solid rgba(231, 76, 60, 0.4);
+}
+
+.btn-delete:hover {
+  background: rgba(231, 76, 60, 0.3);
+  transform: translateY(-2px);
+}
+
+/* Nota informativa en formulario de agregar */
+.add-course-note {
+  background: rgba(0, 229, 255, 0.1);
+  border: 1px solid rgba(0, 229, 255, 0.3);
+  border-radius: 8px;
+  padding: 12px 16px;
+  color: #7eeaff;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.add-course-note i {
+  font-size: 18px;
+}
+
+/* Responsive para modales */
+@media only screen and (max-width: 768px) {
+  .course-modal {
+    width: 95%;
+    max-height: 90vh;
+  }
+
+  .course-edit-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .course-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-actions {
+    flex-direction: column-reverse;
+  }
+
+  .btn-cancel,
+  .btn-save,
+  .btn-delete {
+    width: 100%;
+  }
+}
+
+/* ===== Estilos Gestión de Contenido ===== */
+.content-panel {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.content-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.content-tab {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--glass-border);
+  color: var(--text-secondary);
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.content-tab.active {
+  color: var(--text-primary);
+  background: rgba(255,255,255,0.10);
+}
+.content-add {
+  margin-left: auto;
+  background: linear-gradient(135deg, #00e5ff, #1976d2);
+  border: none;
+  color: #fff;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.content-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.content-item {
+  display: grid;
+  grid-template-columns: 80px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+.content-item-media img {
+  width: 80px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+.content-item-placeholder {
+  width: 80px;
+  height: 48px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.content-item-title {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+.content-item-sub {
+  color: var(--text-secondary);
+  font-size: 13px;
 }
 `}</style>
       </>

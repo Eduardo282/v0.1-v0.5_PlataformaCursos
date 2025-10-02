@@ -2,16 +2,16 @@ const client = require("../config/database");
 const bcrypt = require("bcryptjs");
 
 // Login function (validar contra tabla de registro y contraseña encriptada)
-const login = async ({ name, email, password }) => {
+const login = async ({ email, password, alias }) => {
   try {
-    // Buscar por nombre y correo en la misma tabla donde se registró
+    // Buscar solo por email en la tabla donde se registró
     const [rows] = await client.query(
-      "SELECT * FROM admin_signup WHERE email = ? AND name = ? LIMIT 1",
-      [email, name]
+      "SELECT * FROM admin_signup WHERE email = ? LIMIT 1",
+      [email]
     );
 
     if (rows.length === 0) {
-      return { message: "Usuario, nombre o contraseña incorrectos" };
+      return { message: "Email o contraseña incorrectos" };
     }
 
     const user = rows[0];
@@ -19,16 +19,20 @@ const login = async ({ name, email, password }) => {
     // Validar password hasheado
     const ok = await bcrypt.compare(password, user.password);
     if (!ok) {
-      return { message: "Usuario, nombre o contraseña incorrectos" };
+      return { message: "Email o contraseña incorrectos" };
     }
 
     // Éxito: devolver campos esperados por el frontend/GraphQL
+    // Si el usuario proporciona un alias, úsalo; de lo contrario, usa el nombre del signup
+    const displayName = alias && alias.trim() !== "" ? alias : user.name;
     const nowIso = new Date().toISOString();
+
     return {
       id: user.id,
-      name: user.name,
+      name: user.name, // Nombre original del signup (para fallback)
       lastname: user.lastname ?? null,
       email: user.email,
+      alias: displayName, // Alias preferido o nombre del signup
       active: 1,
       current_role: "admin",
       last_access: nowIso,

@@ -6,12 +6,16 @@ class Login extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      name: "",
       email: "",
       password: "",
+      alias: "",
       error: "",
       loggedIn: false,
       userData: null,
+      showForgotPassword: false,
+      forgotEmail: "",
+      forgotMessage: "",
+      forgotError: "",
     };
   }
 
@@ -39,14 +43,14 @@ class Login extends Component {
 
   handleSubmit = (e) => {
     e.preventDefault();
-    const { name, email, password } = this.state;
-    if (!name || !email || !password) {
-      this.setState({ error: "Todos los campos son obligatorios" });
+    const { email, password, alias } = this.state;
+    if (!email || !password) {
+      this.setState({ error: "Email y contraseña son obligatorios" });
       return;
     }
     // Adaptar llamada a la API fake para usar email y password
     actionApi
-      .login(name, email, password)
+      .login(email, password, alias)
       .then((response) => {
         const data = response.data?.data?.login;
         if (data && data.message && data.message.includes("exitoso")) {
@@ -55,6 +59,7 @@ class Login extends Component {
             id: data.id || undefined, // si lo tienes disponible
             name: data.name,
             email: data.email,
+            alias: data.alias, // Usar alias del backend (que puede ser el alias ingresado o el nombre original)
             current_role: data.role || "admin",
             active: 1,
             last_access: new Date().toISOString(),
@@ -87,14 +92,127 @@ class Login extends Component {
     }, 600);
   };
 
+  handleForgotPassword = () => {
+    this.setState({
+      showForgotPassword: true,
+      forgotEmail: "",
+      forgotMessage: "",
+      forgotError: "",
+    });
+  };
+
+  handleCloseForgotPassword = () => {
+    this.setState({
+      showForgotPassword: false,
+      forgotEmail: "",
+      forgotMessage: "",
+      forgotError: "",
+    });
+  };
+
+  handleForgotEmailChange = (e) => {
+    this.setState({ forgotEmail: e.target.value });
+  };
+
+  handleForgotPasswordSubmit = (e) => {
+    e.preventDefault();
+    const { forgotEmail } = this.state;
+
+    if (!forgotEmail) {
+      this.setState({ forgotError: "Por favor ingresa tu correo electrónico" });
+      return;
+    }
+
+    // Validar formato de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(forgotEmail)) {
+      this.setState({
+        forgotError: "Por favor ingresa un correo electrónico válido",
+      });
+      return;
+    }
+
+    // Aquí puedes hacer la llamada a tu API para enviar el email de recuperación
+    // Por ahora simularemos el envío
+    this.setState({
+      forgotError: "",
+      forgotMessage: `Se ha enviado un enlace de recuperación a ${forgotEmail}. Por favor revisa tu correo.`,
+    });
+
+    // Cerrar el modal después de 3 segundos
+    setTimeout(() => {
+      this.handleCloseForgotPassword();
+    }, 3000);
+  };
+
   render() {
-    const { name, email, password, error, loggedIn, userData } = this.state;
+    const {
+      email,
+      password,
+      alias,
+      error,
+      loggedIn,
+      userData,
+      showForgotPassword,
+      forgotEmail,
+      forgotMessage,
+      forgotError,
+    } = this.state;
     if (loggedIn) {
       // Redirige a /dashboardAdmin y pasa el usuario por estado
       return <Navigate to="/dashboardAdmin" state={{ user: userData }} />;
     }
     return (
       <div id="container" className="container">
+        {/* MODAL DE RECUPERACIÓN DE CONTRASEÑA */}
+        {showForgotPassword && (
+          <div
+            className="forgot-password-modal-overlay"
+            onClick={this.handleCloseForgotPassword}
+          >
+            <div
+              className="forgot-password-modal"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="forgot-password-header">
+                <h3>Recuperar Contraseña</h3>
+                <button
+                  className="close-modal-btn"
+                  onClick={this.handleCloseForgotPassword}
+                >
+                  <i className="bx bx-x"></i>
+                </button>
+              </div>
+              <p className="forgot-password-description">
+                Ingresa tu correo electrónico y te enviaremos un enlace para
+                restablecer tu contraseña.
+              </p>
+              {forgotError && (
+                <div className="glass-error-message">{forgotError}</div>
+              )}
+              {forgotMessage && (
+                <div className="glass-success-message">{forgotMessage}</div>
+              )}
+              <form onSubmit={this.handleForgotPasswordSubmit}>
+                <div className="glass-input-group">
+                  <i className="bx bx-envelope"></i>
+                  <input
+                    type="email"
+                    name="forgotEmail"
+                    placeholder="Correo electrónico"
+                    value={forgotEmail}
+                    onChange={this.handleForgotEmailChange}
+                    required
+                  />
+                </div>
+                <button type="submit" className="glass-submit-btn">
+                  Enviar enlace de recuperación
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
+        {/* FIN MODAL */}
         {/* FORM SECTION */}
         <div className="row">
           {/* SIGN IN - RIGHT SIDE */}
@@ -122,17 +240,6 @@ class Login extends Component {
                 {error && <div className="glass-error-message">{error}</div>}
                 <form onSubmit={this.handleSubmit}>
                   <div className="glass-input-group">
-                    <i className="bx bxs-user"></i>
-                    <input
-                      type="text"
-                      name="name"
-                      placeholder="Nombre"
-                      value={name}
-                      onChange={this.handleInputChange}
-                      required
-                    />
-                  </div>
-                  <div className="glass-input-group">
                     <i className="bx bx-user"></i>
                     <input
                       type="email"
@@ -141,6 +248,16 @@ class Login extends Component {
                       value={email}
                       onChange={this.handleInputChange}
                       required
+                    />
+                  </div>
+                  <div className="glass-input-group">
+                    <i className="bx bx-user-voice"></i>
+                    <input
+                      type="text"
+                      name="alias"
+                      placeholder="Alias (opcional)"
+                      value={alias}
+                      onChange={this.handleInputChange}
                     />
                   </div>
                   <div className="glass-input-group">
@@ -155,7 +272,10 @@ class Login extends Component {
                     />
                   </div>
                   <div className="glass-form-options">
-                    <span className="glass-forgot-password">
+                    <span
+                      className="glass-forgot-password"
+                      onClick={this.handleForgotPassword}
+                    >
                       Olvidé mi contraseña?
                     </span>
                   </div>

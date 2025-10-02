@@ -35,7 +35,7 @@ const signup = async (name, lastname, email, password) => {
   });
 };
 
-const login = async (name, email, password) => {
+const login = async (email, password, alias = "") => {
   return new Promise((resolve, reject) => {
     axios({
       url: API,
@@ -46,12 +46,13 @@ const login = async (name, email, password) => {
       },
       data: {
         query: `
-          query login($name: String!, $email: String!, $password: String!) {
-            login(name: $name, email: $email, password: $password) {
+          query login($email: String!, $password: String!, $alias: String) {
+            login(email: $email, password: $password, alias: $alias) {
               id
               name
               lastname
               email
+              alias
               active
               current_role
               last_access
@@ -59,9 +60,9 @@ const login = async (name, email, password) => {
             }
           }`,
         variables: {
-          name: name,
           email: email,
           password: password,
+          alias: alias,
         },
       },
     })
