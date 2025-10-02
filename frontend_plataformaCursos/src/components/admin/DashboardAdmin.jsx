@@ -1243,7 +1243,7 @@ class DashboardAdmin extends Component {
                   letterSpacing: 1,
                 }}
               >
-                v0.1
+                v0.2
               </span>
               {/* <button
                 style={{
