@@ -102,6 +102,8 @@ class DashboardAdmin extends Component {
       showDeleteModal: false,
       showAddModal: false,
       selectedCourse: null,
+      // Drawer para Gestión de Contenido
+      showContentDrawer: false,
       editFormData: {
         titulo: "",
         autor: "",
@@ -750,12 +752,15 @@ class DashboardAdmin extends Component {
                 <div className="modal-actions">
                   <button
                     type="button"
-                    className="btn-cancel"
+                    className="btn-glass-base btn-glass-secondary btn-glass-md"
                     onClick={this.handleCloseEditModal}
                   >
                     Cancelar
                   </button>
-                  <button type="submit" className="btn-save">
+                  <button
+                    type="submit"
+                    className="btn-glass-base btn-glass-success btn-glass-md"
+                  >
                     Guardar Cambios
                   </button>
                 </div>
@@ -805,13 +810,13 @@ class DashboardAdmin extends Component {
                 </div>
                 <div className="modal-actions">
                   <button
-                    className="btn-cancel"
+                    className="btn-glass-base btn-glass-secondary btn-glass-md"
                     onClick={this.handleCloseDeleteModal}
                   >
                     Cancelar
                   </button>
                   <button
-                    className="btn-delete"
+                    className="btn-glass-base btn-glass-danger btn-glass-md"
                     onClick={this.handleConfirmDelete}
                   >
                     Eliminar Curso
@@ -922,12 +927,15 @@ class DashboardAdmin extends Component {
                 <div className="modal-actions">
                   <button
                     type="button"
-                    className="btn-cancel"
+                    className="btn-glass-base btn-glass-secondary btn-glass-md"
                     onClick={this.handleCloseAddModal}
                   >
                     Cancelar
                   </button>
-                  <button type="submit" className="btn-save">
+                  <button
+                    type="submit"
+                    className="btn-glass-base btn-glass-success btn-glass-md"
+                  >
                     Crear Curso
                   </button>
                 </div>
@@ -1243,7 +1251,7 @@ class DashboardAdmin extends Component {
                   letterSpacing: 1,
                 }}
               >
-                v0.2
+                v0.3
               </span>
               {/* <button
                 style={{
@@ -1335,30 +1343,7 @@ class DashboardAdmin extends Component {
                     <button
                       title="Agregar Curso"
                       onClick={this.handleAddCourse}
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 8,
-                        background: "linear-gradient(135deg, #00e5ff, #1976d2)",
-                        border: "none",
-                        borderRadius: 10,
-                        padding: "10px 18px",
-                        cursor: "pointer",
-                        fontWeight: 700,
-                        color: "#fff",
-                        boxShadow: "0 4px 12px rgba(0, 229, 255, 0.3)",
-                        transition: "all 0.3s ease",
-                      }}
-                      onMouseOver={(e) => {
-                        e.currentTarget.style.transform = "translateY(-2px)";
-                        e.currentTarget.style.boxShadow =
-                          "0 6px 16px rgba(0, 229, 255, 0.4)";
-                      }}
-                      onMouseOut={(e) => {
-                        e.currentTarget.style.transform = "translateY(0)";
-                        e.currentTarget.style.boxShadow =
-                          "0 4px 12px rgba(0, 229, 255, 0.3)";
-                      }}
+                      className="btn-glass-base btn-glass-primary btn-glass-lg"
                     >
                       <FaPlus /> Agregar Curso
                     </button>
@@ -1389,17 +1374,7 @@ class DashboardAdmin extends Component {
                     </div>
                     <button
                       title="Filtros"
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 6,
-                        background: "#fff",
-                        border: "1.5px solid #ececec",
-                        borderRadius: 10,
-                        padding: "8px 12px",
-                        cursor: "pointer",
-                        fontWeight: 600,
-                      }}
+                      className="btn-glass-base btn-glass-ghost btn-glass-md"
                     >
                       <FaFilter /> Filtros
                     </button>
@@ -1556,21 +1531,33 @@ class DashboardAdmin extends Component {
                             <td>
                               <div style={{ display: "flex", gap: 10 }}>
                                 <button
-                                  className="icon-btn"
+                                  className="btn-glass-icon primary"
                                   title="Ver"
                                   onClick={() => this.handleViewCourse(r)}
                                 >
                                   <FaEye />
                                 </button>
                                 <button
-                                  className="icon-btn"
+                                  className="btn-glass-icon primary"
                                   title="Editar"
                                   onClick={() => this.handleEditCourse(r)}
                                 >
                                   <FaEdit />
                                 </button>
                                 <button
-                                  className="icon-btn danger"
+                                  className="btn-glass-icon primary"
+                                  title="Gestión de Contenido"
+                                  onClick={() =>
+                                    this.setState({
+                                      showContentDrawer: true,
+                                      selectedCourse: r,
+                                    })
+                                  }
+                                >
+                                  <FaCog />
+                                </button>
+                                <button
+                                  className="btn-glass-icon danger"
                                   title="Eliminar"
                                   onClick={() => this.handleDeleteCourse(r)}
                                 >
@@ -1593,109 +1580,539 @@ class DashboardAdmin extends Component {
                     marginBottom: 12,
                   }}
                 >
-                  Gestión de Contenido
+                  Gestión de Eventos
                 </h3>
-                <div className="content-panel">
-                  <div className="content-tabs">
-                    {[
-                      { key: "Banners", label: "Banners/Portadas" },
-                      { key: "Testimonios", label: "Testimonios" },
-                      { key: "FAQ", label: "FAQ" },
-                    ].map((t) => (
-                      <button
-                        key={t.key}
-                        className={
-                          "content-tab" +
-                          (this.state.contentActiveTab === t.key
-                            ? " active"
-                            : "")
-                        }
-                        onClick={() => this.setContentTab(t.key)}
+                {(() => {
+                  const materials = this.state.cmMaterials || [];
+                  const filter = this.state.cmFilter || "all";
+                  const search = (this.state.cmSearch || "").toLowerCase();
+                  const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+                  const counts = materials.reduce(
+                    (acc, m) => {
+                      acc.totals[m.type] = (acc.totals[m.type] || 0) + 1;
+                      const t = new Date(m.createdAt).getTime();
+                      if (t >= weekAgo)
+                        acc.weekly[m.type] = (acc.weekly[m.type] || 0) + 1;
+                      return acc;
+                    },
+                    {
+                      totals: { video: 0, documento: 0, evaluacion: 0 },
+                      weekly: { video: 0, documento: 0, evaluacion: 0 },
+                    }
+                  );
+
+                  const list = materials
+                    .filter((m) => filter === "all" || m.type === filter)
+                    .filter((m) =>
+                      (m.title + " " + (m.fileName || ""))
+                        .toLowerCase()
+                        .includes(search)
+                    );
+
+                  const openModal = (prefill = {}) => {
+                    const form = {
+                      title: prefill.title || "",
+                      type: prefill.type || "",
+                      file: prefill.file || null,
+                    };
+                    this.setState({
+                      cmShowModal: true,
+                      cmForm: form,
+                      cmFileName: prefill.fileName || "",
+                    });
+                  };
+                  const closeModal = () =>
+                    this.setState({
+                      cmShowModal: false,
+                      cmForm: { title: "", type: "", file: null },
+                      cmFileName: "",
+                    });
+                  const onInput = (e) => {
+                    const { name, value, files } = e.target;
+                    if (name === "file" && files && files[0]) {
+                      const f = files[0];
+                      const ext = f.name.split(".").pop().toLowerCase();
+                      let inferred = "";
+                      if (["mp4", "mov", "avi", "mkv", "webm"].includes(ext))
+                        inferred = "video";
+                      else if (
+                        [
+                          "pdf",
+                          "doc",
+                          "docx",
+                          "ppt",
+                          "pptx",
+                          "xls",
+                          "xlsx",
+                          "txt",
+                        ].includes(ext)
+                      )
+                        inferred = "documento";
+                      this.setState((prev) => ({
+                        cmForm: {
+                          ...(prev.cmForm || {}),
+                          file: f,
+                          type: (prev.cmForm && prev.cmForm.type) || inferred,
+                        },
+                        cmFileName: f.name,
+                      }));
+                    } else {
+                      this.setState((prev) => ({
+                        cmForm: { ...(prev.cmForm || {}), [name]: value },
+                      }));
+                    }
+                  };
+                  const onSubmit = (e) => {
+                    e.preventDefault();
+                    const form = this.state.cmForm || {
+                      title: "",
+                      type: "",
+                      file: null,
+                    };
+                    const fileName =
+                      this.state.cmFileName ||
+                      (form.file && form.file.name) ||
+                      "";
+                    if (!form.title || !form.type || !form.file) {
+                      alert(
+                        "Completa todos los campos y selecciona un archivo"
+                      );
+                      return;
+                    }
+                    const url = URL.createObjectURL(form.file);
+                    const newItem = {
+                      id: Date.now(),
+                      title: form.title,
+                      type: form.type,
+                      fileName,
+                      fileUrl: url,
+                      createdAt: new Date().toISOString(),
+                    };
+                    this.setState((prev) => ({
+                      cmMaterials: [newItem, ...(prev.cmMaterials || [])],
+                    }));
+                    closeModal();
+                  };
+
+                  const contentInner = (
+                    <div className="cm-wrap" style={{ padding: 12 }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          marginBottom: 12,
+                        }}
                       >
-                        {t.label}
-                      </button>
-                    ))}
-                    <button
-                      className="content-add"
-                      onClick={this.openContentAdd}
-                    >
-                      <FaPlus style={{ marginRight: 6 }} /> Agregar
-                    </button>
-                  </div>
-                  <div className="content-list">
-                    {this.getContentList(this.state.contentActiveTab).length ===
-                    0 ? (
-                      <div className="content-empty">No hay elementos aún</div>
-                    ) : (
-                      this.getContentList(this.state.contentActiveTab).map(
-                        (item, idx) => (
-                          <div key={item.id || idx} className="content-item">
-                            {this.state.contentActiveTab === "Banners" && (
-                              <div className="content-item-media">
-                                {item.imagen ? (
-                                  <img src={item.imagen} alt="banner" />
-                                ) : (
-                                  <div className="content-item-placeholder">
-                                    Sin imagen
+                        <div />
+                        <button
+                          className="btn-glass-base btn-glass-primary btn-glass-md"
+                          onClick={() => openModal()}
+                        >
+                          <FaPlus style={{ marginRight: 6 }} /> Nuevo Contenido
+                        </button>
+                      </div>
+
+                      {(() => {
+                        if (!this.cmCardsRef)
+                          this.cmCardsRef = React.createRef();
+                        const scrollCards = (dir) => {
+                          const el = this.cmCardsRef.current;
+                          if (!el) return;
+                          const step = Math.min(320, el.clientWidth * 0.9);
+                          el.scrollBy({ left: dir * step, behavior: "smooth" });
+                        };
+                        return (
+                          <div className="cm-cards-wrap">
+                            <button
+                              className="cm-nav left"
+                              onClick={() => scrollCards(-1)}
+                              aria-label="Anterior"
+                            >
+                              <FaChevronLeft />
+                            </button>
+                            <div
+                              className="cm-cards scroller"
+                              ref={this.cmCardsRef}
+                            >
+                              <div className="cm-card">
+                                <div className="cm-card-title">Videos</div>
+                                <div className="cm-card-number">
+                                  {counts.totals.video}
+                                </div>
+                                <div className="cm-card-sub">
+                                  +{counts.weekly.video} esta semana
+                                </div>
+                              </div>
+                              <div className="cm-card">
+                                <div className="cm-card-title">Documentos</div>
+                                <div className="cm-card-number">
+                                  {counts.totals.documento}
+                                </div>
+                                <div className="cm-card-sub">
+                                  +{counts.weekly.documento} esta semana
+                                </div>
+                              </div>
+                              <div className="cm-card">
+                                <div className="cm-card-title">
+                                  Evaluaciones
+                                </div>
+                                <div className="cm-card-number">
+                                  {counts.totals.evaluacion}
+                                </div>
+                                <div className="cm-card-sub">
+                                  +{counts.weekly.evaluacion} esta semana
+                                </div>
+                              </div>
+                            </div>
+                            <button
+                              className="cm-nav right"
+                              onClick={() => scrollCards(1)}
+                              aria-label="Siguiente"
+                            >
+                              <FaChevronRight />
+                            </button>
+                          </div>
+                        );
+                      })()}
+
+                      <div className="cm-actions-row">
+                        <div className="left">
+                          <button
+                            className={
+                              "btn-glass-base btn-glass-ghost btn-glass-sm" +
+                              (filter === "all" ? " active" : "")
+                            }
+                            onClick={() => this.setState({ cmFilter: "all" })}
+                          >
+                            Todos
+                          </button>
+                          <button
+                            className={
+                              "btn-glass-base btn-glass-ghost btn-glass-sm" +
+                              (filter === "video" ? " active" : "")
+                            }
+                            onClick={() => this.setState({ cmFilter: "video" })}
+                          >
+                            Videos
+                          </button>
+                          <button
+                            className={
+                              "btn-glass-base btn-glass-ghost btn-glass-sm" +
+                              (filter === "documento" ? " active" : "")
+                            }
+                            onClick={() =>
+                              this.setState({ cmFilter: "documento" })
+                            }
+                          >
+                            Documentos
+                          </button>
+                          <button
+                            className={
+                              "btn-glass-base btn-glass-ghost btn-glass-sm" +
+                              (filter === "evaluacion" ? " active" : "")
+                            }
+                            onClick={() =>
+                              this.setState({ cmFilter: "evaluacion" })
+                            }
+                          >
+                            Evaluaciones
+                          </button>
+                        </div>
+                        <div className="right">
+                          <input
+                            className="search-input"
+                            placeholder="Buscar material..."
+                            value={this.state.cmSearch || ""}
+                            onChange={(e) =>
+                              this.setState({ cmSearch: e.target.value })
+                            }
+                          />
+                        </div>
+                      </div>
+
+                      <div className="materials-table-wrap">
+                        <table className="materials-table">
+                          <thead>
+                            <tr>
+                              <th>Título</th>
+                              <th>Tipo</th>
+                              <th>Archivo</th>
+                              <th>Creado</th>
+                              <th>Acciones</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {list.map((m) => (
+                              <tr key={m.id}>
+                                <td>{m.title}</td>
+                                <td style={{ textTransform: "capitalize" }}>
+                                  {m.type}
+                                </td>
+                                <td>
+                                  <a
+                                    href={m.fileUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                  >
+                                    {m.fileName}
+                                  </a>
+                                </td>
+                                <td>
+                                  {new Date(m.createdAt).toLocaleString()}
+                                </td>
+                                <td>
+                                  <div style={{ display: "flex", gap: 8 }}>
+                                    <button
+                                      className="btn-glass-icon primary"
+                                      title="Editar"
+                                      onClick={() =>
+                                        openModal({
+                                          title: m.title,
+                                          type: m.type,
+                                        })
+                                      }
+                                    >
+                                      <FaEdit />
+                                    </button>
+                                    <button
+                                      className="btn-glass-icon danger"
+                                      title="Eliminar"
+                                      onClick={() =>
+                                        this.setState({
+                                          cmMaterials: materials.filter(
+                                            (x) => x.id !== m.id
+                                          ),
+                                        })
+                                      }
+                                    >
+                                      <FaTrash />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                            {list.length === 0 && (
+                              <tr>
+                                <td
+                                  colSpan="5"
+                                  style={{
+                                    textAlign: "center",
+                                    color: "#B7CCE9",
+                                  }}
+                                >
+                                  Aún no has subido material.
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {this.state.cmShowModal && (
+                        <div
+                          className="course-modal-overlay"
+                          onClick={closeModal}
+                        >
+                          <div
+                            className="upload-modal"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <button
+                              style={{ marginLeft: "88%" }}
+                              className="close-modal-btn"
+                              onClick={closeModal}
+                            >
+                              <i className="bx bx-x"></i>
+                            </button>
+                            <form
+                              onSubmit={(e) => onSubmit(e)}
+                              className="upload-form-grid"
+                            >
+                              <div
+                                className="form-group-modal"
+                                style={{ gridColumn: "1 / -1" }}
+                              >
+                                <label>Título del Contenido</label>
+                                <input
+                                  type="text"
+                                  name="title"
+                                  placeholder="Ej: Video Introducción NOM-035"
+                                  value={
+                                    (this.state.cmForm &&
+                                      this.state.cmForm.title) ||
+                                    ""
+                                  }
+                                  onChange={(e) => onInput(e)}
+                                  required
+                                />
+                              </div>
+                              <div className="form-group-modal">
+                                <label>Tipo de Contenido</label>
+                                <select
+                                  name="type"
+                                  value={
+                                    (this.state.cmForm &&
+                                      this.state.cmForm.type) ||
+                                    ""
+                                  }
+                                  onChange={(e) => onInput(e)}
+                                  required
+                                >
+                                  <option value="">Seleccionar tipo</option>
+                                  <option value="video">Video</option>
+                                  <option value="documento">Documento</option>
+                                  <option value="evaluacion">Evaluación</option>
+                                </select>
+                              </div>
+                              <div
+                                className="form-group-modal"
+                                style={{ alignSelf: "end" }}
+                              >
+                                <label>Archivo</label>
+                                <input
+                                  type="file"
+                                  name="file"
+                                  onChange={(e) => onInput(e)}
+                                  required
+                                />
+                                {this.state.cmFileName && (
+                                  <div className="file-hint">
+                                    {this.state.cmFileName}
                                   </div>
                                 )}
                               </div>
-                            )}
-                            <div className="content-item-body">
-                              {this.state.contentActiveTab === "Banners" && (
-                                <>
-                                  <div className="content-item-title">
-                                    {item.titulo}
-                                  </div>
-                                  <div className="content-item-sub">
-                                    {item.url}
-                                  </div>
-                                </>
-                              )}
-                              {this.state.contentActiveTab ===
-                                "Testimonios" && (
-                                <>
-                                  <div className="content-item-title">
-                                    {item.nombre}
-                                  </div>
-                                  <div className="content-item-sub">
-                                    {item.mensaje}
-                                  </div>
-                                </>
-                              )}
-                              {this.state.contentActiveTab === "FAQ" && (
-                                <>
-                                  <div className="content-item-title">
-                                    {item.pregunta}
-                                  </div>
-                                  <div className="content-item-sub">
-                                    {item.respuesta}
-                                  </div>
-                                </>
-                              )}
-                            </div>
-                            <div className="content-item-actions">
-                              <button
-                                className="icon-btn"
-                                title="Editar"
-                                onClick={() => this.openContentEdit(idx)}
+                              <div
+                                className="modal-actions"
+                                style={{ gridColumn: "1 / -1" }}
                               >
-                                <FaEdit />
-                              </button>
-                              <button
-                                className="icon-btn danger"
-                                title="Eliminar"
-                                onClick={() => this.openContentDelete(idx)}
-                              >
-                                <FaTrash />
-                              </button>
-                            </div>
+                                <button
+                                  type="button"
+                                  className="btn-glass-base btn-glass-secondary btn-glass-md"
+                                  onClick={closeModal}
+                                >
+                                  Cancelar
+                                </button>
+                                <button
+                                  type="submit"
+                                  className="btn-glass-base btn-glass-upload btn-glass-md"
+                                >
+                                  Subir Contenido
+                                </button>
+                              </div>
+                            </form>
                           </div>
-                        )
-                      )
-                    )}
-                  </div>
-                </div>
+                        </div>
+                      )}
+
+                      <style>{`
+                        .cm-cards-wrap { position:relative; margin:12px 0 10px; }
+                        .cm-cards.scroller { display:flex; gap:14px; overflow-x:auto; scroll-snap-type:x mandatory; scroll-behavior:smooth; padding: 6px 4px 12px; }
+                        .cm-cards.scroller::-webkit-scrollbar { height: 8px; }
+                        .cm-cards.scroller::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 8px; }
+                        .cm-card { flex: 0 0 280px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:20px; box-shadow:0 8px 32px rgba(0,0,0,0.2); scroll-snap-align:start; backdrop-filter:blur(10px); position:relative; overflow:hidden; }
+                        .cm-card::before { content:''; position:absolute; top:0; left:0; right:0; height:1px; background:linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent); }
+                        .cm-card-title { color:#E6F1FF; font-weight:700; margin-bottom:8px; font-size:14px; }
+                        .cm-card-number { font-size:36px; font-weight:800; color:#fff; text-shadow:0 0 20px rgba(255,255,255,0.3); }
+                        .cm-card-sub { color:#B7CCE9; font-size:12px; margin:12px 0 4px; opacity:0.8; }
+                        .cm-nav { position:absolute; top:50%; transform: translateY(-50%); background:#0e1223; color:#fff; border:1px solid #0e1223; border-radius:50%; width:36px; height:36px; display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.25); }
+                        .cm-nav.left { left:-8px; }
+                        .cm-nav.right { right:-8px; }
+                        .cm-actions-row { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:16px 0 12px; flex-wrap:wrap; }
+                        .btn-ghost { background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:10px 16px; cursor:pointer; font-weight:600; color:#B7CCE9; backdrop-filter:blur(5px); transition:all 0.2s ease; }
+                        .btn-ghost:hover { background:rgba(255,255,255,0.1); transform:translateY(-1px); }
+                        .btn-ghost.active { background:rgba(0,229,255,0.15); color:#00e5ff; border-color:rgba(0,229,255,0.3); box-shadow:0 0 20px rgba(0,229,255,0.2); }
+                        /* Legacy button styles updated to match new system */
+                        .btn-primary { 
+                          background: linear-gradient(135deg,rgba(0,229,255,0.25),rgba(25,118,210,0.25)); 
+                          border: 1px solid rgba(0,229,255,0.4); 
+                          color: #00e5ff; 
+                          border-radius: 12px; 
+                          padding: 12px 20px; 
+                          font-weight: 600; 
+                          cursor: pointer; 
+                          backdrop-filter: blur(10px); 
+                          box-shadow: 0 8px 32px rgba(0,229,255,0.15), 0 0 0 1px rgba(255,255,255,0.08) inset; 
+                          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+                          display: inline-flex;
+                          align-items: center;
+                          justify-content: center;
+                          gap: 8px;
+                        }
+                        .btn-primary:hover { 
+                          transform: translateY(-2px); 
+                          box-shadow: 0 12px 40px rgba(0,229,255,0.25), 0 0 0 1px rgba(255,255,255,0.12) inset; 
+                          background: linear-gradient(135deg,rgba(0,229,255,0.35),rgba(25,118,210,0.35)); 
+                          border-color: rgba(0,229,255,0.6);
+                          color: #7eeaff;
+                        }
+                        .search-input { padding:12px 16px; border-radius:10px; border:1px solid rgba(255,255,255,0.12); outline:none; width:260px; background:rgba(255,255,255,0.06); color:#E6F1FF; backdrop-filter:blur(5px); transition:all 0.2s ease; }
+                        .search-input::placeholder { color:#B7CCE9; opacity:0.7; }
+                        .search-input:focus { border-color:rgba(0,229,255,0.5); box-shadow:0 0 0 3px rgba(0,229,255,0.1); background:rgba(255,255,255,0.1); }
+                        .materials-table-wrap { background:#ffffff0f; border:1px solid rgba(255,255,255,0.12); border-radius:12px; margin-top:12px; overflow:auto; }
+                        .materials-table { width:100%; border-collapse:separate; border-spacing:0; }
+                        .materials-table thead th { text-align:left; color:#E6F1FF; padding:12px; background:rgba(255,255,255,0.06); position:sticky; top:0; backdrop-filter: blur(6px); }
+                        .materials-table tbody td { padding:12px; color:#B7CCE9; border-top:1px solid rgba(255,255,255,0.08); }
+                        /* Modal header and close button alignment */
+                        .upload-modal-header { display:flex; align-items:center; gap: 8px; }
+                        .upload-modal-header .close-modal-btn { margin-left:auto; }
+                        @media (max-width: 840px) { .cm-nav.left { left: 4px; } .cm-nav.right { right: 4px; } .search-input { width: 100%; } }
+                      `}</style>
+                    </div>
+                  );
+
+                  // Drawer: capa encima que ocupa 40% ancho, desliza desde la derecha
+                  return (
+                    <>
+                      {/* Botón visible si quieres abrir desde aquí también (opcional)
+                          Dejamos el trigger en los íconos Ver/Editar ya añadidos */}
+
+                      <div
+                        className={
+                          "content-drawer-overlay" +
+                          (this.state.showContentDrawer ? " open" : "")
+                        }
+                        onClick={() =>
+                          this.setState({ showContentDrawer: false })
+                        }
+                      ></div>
+                      <aside
+                        className={
+                          "content-drawer" +
+                          (this.state.showContentDrawer ? " open" : "")
+                        }
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="content-drawer-header">
+                          <h3 style={{ margin: 0, color: "#E6F1FF" }}>
+                            Gestión de Contenido
+                          </h3>
+                          <button
+                            className="close-modal-btn"
+                            onClick={() =>
+                              this.setState({ showContentDrawer: false })
+                            }
+                          >
+                            <i className="bx bx-x" style={{ fontSize: 18 }}></i>
+                          </button>
+                        </div>
+                        <div className="content-drawer-body">
+                          {contentInner}
+                        </div>
+                      </aside>
+
+                      <style>{`
+                        .content-drawer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.35); opacity: 0; pointer-events: none; transition: opacity .25s ease; z-index: 999; }
+                        .content-drawer-overlay.open { opacity: 1; pointer-events: auto; }
+                        .content-drawer { position: fixed; top:0; right:0; height:100%; width:min(560px, 45vw); background: rgba(14,18,35,0.98); border-left: 1px solid rgba(255,255,255,0.12); transform: translateX(100%); transition: transform .3s ease; z-index: 1000; display:flex; flex-direction: column; box-shadow: -16px 0 32px rgba(0,0,0,0.35); backdrop-filter: blur(8px); }
+                        .content-drawer.open { transform: translateX(0); }
+                        .content-drawer-header { display:flex; align-items:center; justify-content:space-between; padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+                        .content-drawer-body { padding: 12px 14px 18px; overflow:auto; height: 100%; }
+                        @media (max-width: 720px) { .content-drawer { width: 100%; } }
+                      `}</style>
+                    </>
+                  );
+                })()}
                 {/* Placeholder for a chart/animation */}
                 {/* Busco la sección 'Gráfica de Inscripciones' y reemplazo el SVG por el AreaChart funcional: */}
                 <div
@@ -2095,12 +2512,15 @@ class DashboardAdmin extends Component {
                 <div className="modal-actions">
                   <button
                     type="button"
-                    className="btn-cancel"
+                    className="btn-glass-base btn-glass-secondary btn-glass-md"
                     onClick={this.closeContentModal}
                   >
                     Cancelar
                   </button>
-                  <button type="submit" className="btn-save">
+                  <button
+                    type="submit"
+                    className="btn-glass-base btn-glass-success btn-glass-md"
+                  >
                     Guardar
                   </button>
                 </div>
@@ -2143,13 +2563,13 @@ class DashboardAdmin extends Component {
                 </div>
                 <div className="modal-actions">
                   <button
-                    className="btn-cancel"
+                    className="btn-glass-base btn-glass-secondary btn-glass-md"
                     onClick={this.closeContentDelete}
                   >
                     Cancelar
                   </button>
                   <button
-                    className="btn-delete"
+                    className="btn-glass-base btn-glass-danger btn-glass-md"
                     onClick={this.confirmContentDelete}
                   >
                     Eliminar
@@ -2177,6 +2597,261 @@ class DashboardAdmin extends Component {
   --text-secondary: #B7CCE9;
   --accent-cyan: #7eeaff;
   --accent-blue: #1976d2;
+}
+
+/* ========== UNIFIED BUTTON SYSTEM ========== */
+/* Sistema de botones glassmorphism consistente */
+
+/* Base button styles */
+.btn-glass-base {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: none;
+  border-radius: 12px;
+  font-family: inherit;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  position: relative;
+  overflow: hidden;
+  text-decoration: none;
+  outline: none;
+  box-shadow: var(--glass-shadow);
+}
+
+/* Button sizes */
+.btn-glass-sm {
+  padding: 8px 16px;
+  font-size: 13px;
+  border-radius: 8px;
+}
+
+.btn-glass-md {
+  padding: 12px 20px;
+  font-size: 14px;
+}
+
+.btn-glass-lg {
+  padding: 16px 28px;
+  font-size: 16px;
+  border-radius: 14px;
+}
+
+/* Primary button - main actions */
+.btn-glass-primary {
+  background: linear-gradient(135deg, rgba(0,229,255,0.25), rgba(25,118,210,0.25));
+  border: 1px solid rgba(0,229,255,0.4);
+  color: #00e5ff;
+  box-shadow: 
+    0 8px 32px rgba(0,229,255,0.15),
+    0 0 0 1px rgba(255,255,255,0.08) inset;
+}
+
+.btn-glass-primary:hover {
+  background: linear-gradient(135deg, rgba(0,229,255,0.35), rgba(25,118,210,0.35));
+  border-color: rgba(0,229,255,0.6);
+  transform: translateY(-2px);
+  box-shadow: 
+    0 12px 40px rgba(0,229,255,0.25),
+    0 0 0 1px rgba(255,255,255,0.12) inset;
+  color: #7eeaff;
+}
+
+.btn-glass-primary:active {
+  transform: translateY(-1px);
+  box-shadow: 
+    0 6px 20px rgba(0,229,255,0.2),
+    0 0 0 1px rgba(255,255,255,0.08) inset;
+}
+
+/* Secondary button - alternative actions */
+.btn-glass-secondary {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.16);
+  color: var(--text-primary);
+  box-shadow: 
+    0 8px 32px rgba(0,0,0,0.2),
+    0 0 0 1px rgba(255,255,255,0.08) inset;
+}
+
+.btn-glass-secondary:hover {
+  background: rgba(255,255,255,0.14);
+  border-color: rgba(255,255,255,0.24);
+  transform: translateY(-2px);
+  box-shadow: 
+    0 12px 40px rgba(0,0,0,0.3),
+    0 0 0 1px rgba(255,255,255,0.12) inset;
+  color: #fff;
+}
+
+/* Ghost button - filters and tabs */
+.btn-glass-ghost {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: var(--text-secondary);
+  box-shadow: 
+    0 4px 16px rgba(0,0,0,0.15),
+    0 0 0 1px rgba(255,255,255,0.05) inset;
+}
+
+.btn-glass-ghost:hover {
+  background: rgba(255,255,255,0.1);
+  border-color: rgba(255,255,255,0.2);
+  transform: translateY(-1px);
+  color: var(--text-primary);
+  box-shadow: 
+    0 8px 24px rgba(0,0,0,0.2),
+    0 0 0 1px rgba(255,255,255,0.1) inset;
+}
+
+.btn-glass-ghost.active {
+  background: rgba(0,229,255,0.15);
+  border-color: rgba(0,229,255,0.3);
+  color: #00e5ff;
+  box-shadow: 
+    0 0 20px rgba(0,229,255,0.2),
+    0 0 0 1px rgba(0,229,255,0.1) inset;
+}
+
+/* Success button */
+.btn-glass-success {
+  background: linear-gradient(135deg, rgba(76,175,80,0.25), rgba(56,142,60,0.25));
+  border: 1px solid rgba(76,175,80,0.4);
+  color: #4caf50;
+  box-shadow: 
+    0 8px 32px rgba(76,175,80,0.15),
+    0 0 0 1px rgba(255,255,255,0.08) inset;
+}
+
+.btn-glass-success:hover {
+  background: linear-gradient(135deg, rgba(76,175,80,0.35), rgba(56,142,60,0.35));
+  border-color: rgba(76,175,80,0.6);
+  transform: translateY(-2px);
+  color: #81c784;
+}
+
+/* Danger button */
+.btn-glass-danger {
+  background: linear-gradient(135deg, rgba(244,67,54,0.25), rgba(211,47,47,0.25));
+  border: 1px solid rgba(244,67,54,0.4);
+  color: #f44336;
+  box-shadow: 
+    0 8px 32px rgba(244,67,54,0.15),
+    0 0 0 1px rgba(255,255,255,0.08) inset;
+}
+
+.btn-glass-danger:hover {
+  background: linear-gradient(135deg, rgba(244,67,54,0.35), rgba(211,47,47,0.35));
+  border-color: rgba(244,67,54,0.6);
+  transform: translateY(-2px);
+  color: #ef5350;
+}
+
+/* Icon button - small action buttons */
+.btn-glass-icon {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: var(--text-secondary);
+  padding: 8px;
+  border-radius: 8px;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 
+    0 4px 16px rgba(0,0,0,0.15),
+    0 0 0 1px rgba(255,255,255,0.05) inset;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-glass-icon:hover {
+  background: rgba(255,255,255,0.12);
+  border-color: rgba(255,255,255,0.2);
+  transform: translateY(-2px) scale(1.05);
+  color: var(--text-primary);
+  box-shadow: 
+    0 8px 24px rgba(0,0,0,0.25),
+    0 0 0 1px rgba(255,255,255,0.1) inset;
+}
+
+.btn-glass-icon.danger {
+  color: #f44336;
+  border-color: rgba(244,67,54,0.3);
+}
+
+.btn-glass-icon.danger:hover {
+  background: rgba(244,67,54,0.15);
+  color: #ef5350;
+  border-color: rgba(244,67,54,0.5);
+}
+
+.btn-glass-icon.primary {
+  color: #00e5ff;
+  border-color: rgba(0,229,255,0.3);
+}
+
+.btn-glass-icon.primary:hover {
+  background: rgba(0,229,255,0.15);
+  color: #7eeaff;
+  border-color: rgba(0,229,255,0.5);
+}
+
+/* Upload button special styling */
+.btn-glass-upload {
+  background: linear-gradient(135deg, rgba(156,39,176,0.25), rgba(123,31,162,0.25));
+  border: 1px solid rgba(156,39,176,0.4);
+  color: #ab47bc;
+  box-shadow: 
+    0 8px 32px rgba(156,39,176,0.15),
+    0 0 0 1px rgba(255,255,255,0.08) inset;
+}
+
+.btn-glass-upload:hover {
+  background: linear-gradient(135deg, rgba(156,39,176,0.35), rgba(123,31,162,0.35));
+  border-color: rgba(156,39,176,0.6);
+  transform: translateY(-2px);
+  color: #ba68c8;
+}
+
+/* Focus states for accessibility */
+.btn-glass-base:focus-visible {
+  outline: 2px solid rgba(0,229,255,0.5);
+  outline-offset: 2px;
+}
+
+/* Disabled state */
+.btn-glass-base:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Loading state */
+.btn-glass-base.loading {
+  pointer-events: none;
+  position: relative;
+}
+
+.btn-glass-base.loading::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border: 2px solid currentColor;
+  border-top: 2px solid transparent;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 .hero-header {
   position: relative;
