@@ -333,6 +333,11 @@ class DashboardAdmin extends Component {
     }
   }
 
+  handleNavigateToModule = (modulePath) => {
+    this.setState({ modulosDropdownOpen: false });
+    this.props.router.navigate(modulePath);
+  };
+
   // Funciones para Ver Curso
   handleViewCourse = (course) => {
     this.setState({
@@ -2698,21 +2703,46 @@ class DashboardAdmin extends Component {
                         flexDirection: "column",
                       }}
                     >
-                      <a href="#" className="navbar-link dropdown-link">
+                      <button
+                        className="navbar-link dropdown-link"
+                        onClick={() =>
+                          this.handleNavigateToModule("/certificaciones")
+                        }
+                      >
                         Certificaciones
-                      </a>
-                      <a href="#" className="navbar-link dropdown-link">
+                      </button>
+                      <button
+                        className="navbar-link dropdown-link"
+                        onClick={() =>
+                          this.handleNavigateToModule("/evidencias")
+                        }
+                      >
                         Evidencias
-                      </a>
-                      <a href="#" className="navbar-link dropdown-link">
+                      </button>
+                      <button
+                        className="navbar-link dropdown-link"
+                        onClick={() =>
+                          this.handleNavigateToModule("/reportes-metricas")
+                        }
+                      >
                         Reportes y Métricas
-                      </a>
-                      <a href="#" className="navbar-link dropdown-link">
+                      </button>
+                      <button
+                        className="navbar-link dropdown-link"
+                        onClick={() =>
+                          this.handleNavigateToModule("/expedientes")
+                        }
+                      >
                         Expedientes
-                      </a>
-                      <a href="#" className="navbar-link dropdown-link">
+                      </button>
+                      <button
+                        className="navbar-link dropdown-link"
+                        onClick={() =>
+                          this.handleNavigateToModule("/cumplimiento-stps")
+                        }
+                      >
                         Cumplimiento STPS
-                      </a>
+                      </button>
                     </div>,
                     document.body
                   )}
@@ -5644,8 +5674,15 @@ class DashboardAdmin extends Component {
 }
 .navbar-link.dropdown-link {
   background: none !important;
+  border: none !important;
+  width: 100% !important;
+  text-align: left !important;
+  padding: 8px 16px !important;
+  cursor: pointer !important;
   font-weight: 700;
   color: #213547 !important;
+  font-size: 14px !important;
+  font-family: inherit !important;
 }
 .navbar-link.dropdown-link:hover, .navbar-link.dropdown-link:focus {
   background: #f7f7fa !important;
