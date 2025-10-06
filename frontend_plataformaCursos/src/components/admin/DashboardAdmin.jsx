@@ -23,6 +23,8 @@ import {
   FaTrash,
   FaCheckCircle,
   FaPlus,
+  FaClock, // <-- Ícono de reloj para duración
+  FaStickyNote, // <-- Ícono de libreta para notas
 } from "react-icons/fa";
 import { LineChart } from "@mui/x-charts";
 
@@ -96,6 +98,11 @@ class DashboardAdmin extends Component {
       modulosDropdownOpen: false, // <-- Estado para el dropdown
       modulosDropdownCoords: { top: 0, left: 0 },
       coursesSearch: "",
+      // Estados para paginación de cursos
+      currentPage: 1,
+      coursesPerPage: 4,
+      // Estado para modal de notas y anuncios
+      showNotesModal: false,
       // Estados para modales de cursos
       showViewModal: false,
       showEditModal: false,
@@ -151,6 +158,99 @@ class DashboardAdmin extends Component {
       contentDeleteModal: false,
       contentEditingIndex: null,
       contentFormData: {},
+      // ===== Estados para Gestión de Eventos =====
+      eventos: [
+        {
+          id: 1,
+          titulo: "Capacitación NOM-035",
+          fecha: "2024-07-20",
+          hora: "10:00",
+          duracion: "4 horas",
+          ubicacion: "Sala de Conferencias A",
+          descripcion:
+            "Capacitación sobre la implementación de la NOM-035 en el trabajo",
+          instructor: "Dra. Patricia Hernández",
+          asistentes: ["Juan Pérez", "María López", "Carlos García"],
+          estado: "programado",
+          recordatorios: [
+            { tipo: "email", tiempo: "1 día antes" },
+            { tipo: "sms", tiempo: "2 horas antes" },
+          ],
+        },
+        {
+          id: 2,
+          titulo: "Seminario de Liderazgo",
+          fecha: "2024-07-25",
+          hora: "14:00",
+          duracion: "3 horas",
+          ubicacion: "Auditorio Principal",
+          descripcion: "Técnicas modernas de liderazgo empresarial",
+          instructor: "Dr. Manuel Ruiz",
+          asistentes: ["Ana Martínez", "Roberto González"],
+          estado: "programado",
+          recordatorios: [],
+        },
+      ],
+      // Modales de eventos
+      showEventRegisterModal: false,
+      showEventEditModal: false,
+      showEventDeleteModal: false,
+      showEventListModal: false,
+      showEventRemindersModal: false,
+      showEventAttendeesModal: false,
+      showEventReportsModal: false,
+      showEventNotificationsModal: false,
+      // Formularios de eventos
+      eventForm: {
+        titulo: "",
+        fecha: "",
+        hora: "",
+        duracion: "",
+        ubicacion: "",
+        descripcion: "",
+        instructor: "",
+        asistentes: [],
+        estado: "programado",
+      },
+      selectedEvent: null,
+      eventToDelete: null,
+      // Estados para recordatorios
+      reminderForm: {
+        eventId: null,
+        tipo: "email",
+        tiempo: "1 día antes",
+        mensaje: "",
+      },
+      // Estados para asistentes
+      attendeeForm: {
+        eventId: null,
+        nombre: "",
+        email: "",
+        telefono: "",
+      },
+      newAttendee: "",
+      // Estados para reportes
+      reportFilters: {
+        fechaInicio: "",
+        fechaFin: "",
+        estado: "todos",
+        instructor: "",
+      },
+      // Estados para notificaciones
+      notificationSettings: {
+        emailEnabled: true,
+        smsEnabled: false,
+        tiempoAnticipacion: "1 día",
+        recordatorioAutomatico: true,
+      },
+      // Estados para tooltips personalizados
+      customTooltip: {
+        show: false,
+        text: "",
+        x: 0,
+        y: 0,
+        type: "",
+      },
     };
     this.handleSidebarOpen = this.handleSidebarOpen.bind(this);
     this.handleSidebarClose = this.handleSidebarClose.bind(this);
@@ -532,6 +632,15 @@ class DashboardAdmin extends Component {
     return null;
   };
 
+  // Funciones para Modal de Notas y Anuncios
+  handleOpenNotesModal = () => {
+    this.setState({ showNotesModal: true });
+  };
+
+  handleCloseNotesModal = () => {
+    this.setState({ showNotesModal: false });
+  };
+
   // Funciones para Agregar Curso
   handleAddCourse = () => {
     this.setState({
@@ -575,6 +684,461 @@ class DashboardAdmin extends Component {
     console.log("Creando nuevo curso:", this.state.addFormData);
     alert("Curso creado exitosamente!");
     this.handleCloseAddModal();
+  };
+
+  // ===== FUNCIONES PARA GESTIÓN DE EVENTOS =====
+
+  // Registrar Eventos
+  handleOpenEventRegister = () => {
+    this.setState({
+      showEventRegisterModal: true,
+      eventForm: {
+        titulo: "",
+        fecha: "",
+        hora: "",
+        duracion: "",
+        ubicacion: "",
+        descripcion: "",
+        instructor: "",
+        asistentes: [],
+        estado: "programado",
+      },
+    });
+  };
+
+  handleCloseEventRegister = () => {
+    this.setState({ showEventRegisterModal: false });
+  };
+
+  handleEventInputChange = (e) => {
+    const { name, value } = e.target;
+    this.setState((prevState) => ({
+      eventForm: {
+        ...prevState.eventForm,
+        [name]: value,
+      },
+    }));
+  };
+
+  handleSaveEvent = (e) => {
+    e.preventDefault();
+    const newEvent = {
+      id: Date.now(),
+      ...this.state.eventForm,
+      asistentes: [],
+      recordatorios: [],
+    };
+    this.setState((prevState) => ({
+      eventos: [...prevState.eventos, newEvent],
+      showEventRegisterModal: false,
+    }));
+    alert("Evento registrado exitosamente!");
+  };
+
+  // Modificar Eventos
+  handleOpenEventEdit = () => {
+    this.setState({ showEventListModal: true, modalType: "edit" });
+  };
+
+  handleEditEvent = (event) => {
+    this.setState({
+      showEventEditModal: true,
+      selectedEvent: event,
+      eventForm: { ...event },
+      showEventListModal: false,
+    });
+  };
+
+  handleCloseEventEdit = () => {
+    this.setState({
+      showEventEditModal: false,
+      selectedEvent: null,
+    });
+  };
+
+  handleUpdateEvent = (e) => {
+    e.preventDefault();
+    this.setState((prevState) => ({
+      eventos: prevState.eventos.map((event) =>
+        event.id === prevState.selectedEvent.id
+          ? { ...prevState.eventForm }
+          : event
+      ),
+      showEventEditModal: false,
+    }));
+    alert("Evento actualizado exitosamente!");
+  };
+
+  // Eliminar Eventos
+  handleOpenEventDelete = () => {
+    this.setState({ showEventListModal: true, modalType: "delete" });
+  };
+
+  handleDeleteEvent = (event) => {
+    this.setState({
+      showEventDeleteModal: true,
+      eventToDelete: event,
+      showEventListModal: false,
+    });
+  };
+
+  handleConfirmDeleteEvent = () => {
+    this.setState((prevState) => ({
+      eventos: prevState.eventos.filter(
+        (event) => event.id !== prevState.eventToDelete.id
+      ),
+      showEventDeleteModal: false,
+      eventToDelete: null,
+    }));
+    alert("Evento eliminado exitosamente!");
+  };
+
+  handleCloseEventDelete = () => {
+    this.setState({
+      showEventDeleteModal: false,
+      eventToDelete: null,
+    });
+  };
+
+  // Ver Lista de Eventos
+  handleOpenEventList = () => {
+    this.setState({ showEventListModal: true, modalType: "view" });
+  };
+
+  handleCloseEventList = () => {
+    this.setState({ showEventListModal: false, modalType: null });
+  };
+
+  // Configurar Recordatorios
+  handleOpenEventReminders = () => {
+    this.setState({ showEventListModal: true, modalType: "reminders" });
+  };
+
+  handleConfigureReminders = (event) => {
+    this.setState({
+      showEventRemindersModal: true,
+      selectedEvent: event,
+      reminderForm: {
+        eventId: event.id,
+        tipo: "email",
+        tiempo: "1 día antes",
+        mensaje: "",
+      },
+      showEventListModal: false,
+    });
+  };
+
+  handleCloseEventReminders = () => {
+    this.setState({
+      showEventRemindersModal: false,
+      selectedEvent: null,
+    });
+  };
+
+  handleReminderInputChange = (e) => {
+    const { name, value } = e.target;
+    this.setState((prevState) => ({
+      reminderForm: {
+        ...prevState.reminderForm,
+        [name]: value,
+      },
+    }));
+  };
+
+  handleSaveReminder = (e) => {
+    e.preventDefault();
+    const newReminder = {
+      tipo: this.state.reminderForm.tipo,
+      tiempo: this.state.reminderForm.tiempo,
+      mensaje: this.state.reminderForm.mensaje,
+    };
+
+    this.setState((prevState) => ({
+      eventos: prevState.eventos.map((event) =>
+        event.id === prevState.selectedEvent.id
+          ? { ...event, recordatorios: [...event.recordatorios, newReminder] }
+          : event
+      ),
+      showEventRemindersModal: false,
+    }));
+    alert("Recordatorio configurado exitosamente!");
+  };
+
+  // Gestionar Asistentes
+  handleOpenEventAttendees = () => {
+    this.setState({ showEventListModal: true, modalType: "attendees" });
+  };
+
+  handleManageAttendees = (event) => {
+    this.setState({
+      showEventAttendeesModal: true,
+      selectedEvent: event,
+      newAttendee: "",
+      showEventListModal: false,
+    });
+  };
+
+  handleCloseEventAttendees = () => {
+    this.setState({
+      showEventAttendeesModal: false,
+      selectedEvent: null,
+      newAttendee: "",
+    });
+  };
+
+  handleAddAttendee = () => {
+    if (this.state.newAttendee.trim()) {
+      this.setState((prevState) => ({
+        eventos: prevState.eventos.map((event) =>
+          event.id === prevState.selectedEvent.id
+            ? {
+                ...event,
+                asistentes: [...event.asistentes, prevState.newAttendee],
+              }
+            : event
+        ),
+        selectedEvent: {
+          ...prevState.selectedEvent,
+          asistentes: [
+            ...prevState.selectedEvent.asistentes,
+            prevState.newAttendee,
+          ],
+        },
+        newAttendee: "",
+      }));
+    }
+  };
+
+  handleRemoveAttendee = (attendeeIndex) => {
+    this.setState((prevState) => ({
+      eventos: prevState.eventos.map((event) =>
+        event.id === prevState.selectedEvent.id
+          ? {
+              ...event,
+              asistentes: event.asistentes.filter(
+                (_, index) => index !== attendeeIndex
+              ),
+            }
+          : event
+      ),
+      selectedEvent: {
+        ...prevState.selectedEvent,
+        asistentes: prevState.selectedEvent.asistentes.filter(
+          (_, index) => index !== attendeeIndex
+        ),
+      },
+    }));
+  };
+
+  // Generar Reportes
+  handleOpenEventReports = () => {
+    this.setState({
+      showEventReportsModal: true,
+      reportFilters: {
+        fechaInicio: "",
+        fechaFin: "",
+        estado: "todos",
+        instructor: "",
+      },
+    });
+  };
+
+  handleCloseEventReports = () => {
+    this.setState({ showEventReportsModal: false });
+  };
+
+  handleReportFilterChange = (e) => {
+    const { name, value } = e.target;
+    this.setState((prevState) => ({
+      reportFilters: {
+        ...prevState.reportFilters,
+        [name]: value,
+      },
+    }));
+  };
+
+  handleGenerateReport = () => {
+    const { eventos, reportFilters } = this.state;
+    let filteredEvents = eventos;
+
+    if (reportFilters.fechaInicio) {
+      filteredEvents = filteredEvents.filter(
+        (event) => event.fecha >= reportFilters.fechaInicio
+      );
+    }
+    if (reportFilters.fechaFin) {
+      filteredEvents = filteredEvents.filter(
+        (event) => event.fecha <= reportFilters.fechaFin
+      );
+    }
+    if (reportFilters.estado !== "todos") {
+      filteredEvents = filteredEvents.filter(
+        (event) => event.estado === reportFilters.estado
+      );
+    }
+    if (reportFilters.instructor) {
+      filteredEvents = filteredEvents.filter((event) =>
+        event.instructor
+          .toLowerCase()
+          .includes(reportFilters.instructor.toLowerCase())
+      );
+    }
+
+    console.log("Reporte generado:", filteredEvents);
+    alert(`Reporte generado con ${filteredEvents.length} eventos`);
+  };
+
+  // Configurar Notificaciones
+  handleOpenEventNotifications = () => {
+    this.setState({ showEventNotificationsModal: true });
+  };
+
+  handleCloseEventNotifications = () => {
+    this.setState({ showEventNotificationsModal: false });
+  };
+
+  handleNotificationSettingChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    this.setState((prevState) => ({
+      notificationSettings: {
+        ...prevState.notificationSettings,
+        [name]: type === "checkbox" ? checked : value,
+      },
+    }));
+  };
+
+  handleSaveNotificationSettings = () => {
+    alert("Configuración de notificaciones guardada exitosamente!");
+    this.setState({ showEventNotificationsModal: false });
+  };
+
+  // Funciones de paginación para cursos
+  handleNextPage = () => {
+    const { currentPage, coursesPerPage } = this.state;
+    const totalCourses = this.getFilteredCourses().length;
+    const totalPages = Math.ceil(totalCourses / coursesPerPage);
+
+    if (currentPage < totalPages) {
+      this.setState({ currentPage: currentPage + 1 });
+    }
+  };
+
+  handlePrevPage = () => {
+    const { currentPage } = this.state;
+    if (currentPage > 1) {
+      this.setState({ currentPage: currentPage - 1 });
+    }
+  };
+
+  handleGoToPage = (pageNumber) => {
+    this.setState({ currentPage: pageNumber });
+  };
+
+  getFilteredCourses = () => {
+    const allCourses = [
+      {
+        img: "https://randomuser.me/api/portraits/lego/9.jpg",
+        titulo: "Implementación de la NOM-035 en el Trabajo",
+        autor: "Dra. Patricia Hernández",
+        categoria: "Seguridad Laboral",
+        estudiantes: 32,
+        precio: 2500,
+        rating: 4.8,
+        estado: "Activo",
+      },
+      {
+        img: "https://randomuser.me/api/portraits/lego/9.jpg",
+        titulo: "Curso SAT México - Facturación Electrónica",
+        autor: "Lic. Roberto González",
+        categoria: "Fiscal",
+        estudiantes: 45,
+        precio: 1800,
+        rating: 4.6,
+        estado: "Activo",
+      },
+      {
+        img: "https://randomuser.me/api/portraits/lego/9.jpg",
+        titulo: "Crea tu Plataforma de Gestión Empresarial",
+        autor: "Ing. Ana Martínez",
+        categoria: "Tecnología",
+        estudiantes: 23,
+        precio: 4500,
+        rating: 4.9,
+        estado: "Activo",
+      },
+      {
+        img: "https://randomuser.me/api/portraits/lego/9.jpg",
+        titulo: "Fundamentos de Liderazgo Empresarial",
+        autor: "Dr. Manuel Ruiz",
+        categoria: "Liderazgo",
+        estudiantes: 156,
+        precio: 0,
+        rating: 4.4,
+        estado: "Activo",
+      },
+      {
+        img: "https://randomuser.me/api/portraits/lego/9.jpg",
+        titulo: "Seguridad e Higiene en el Trabajo",
+        autor: "Ing. Laura Pérez",
+        categoria: "Seguridad Laboral",
+        estudiantes: 18,
+        precio: 2200,
+        rating: 4.7,
+        estado: "Activo",
+      },
+      {
+        img: "https://randomuser.me/api/portraits/lego/9.jpg",
+        titulo: "Marketing Digital para Empresas",
+        autor: "Lic. Sofía Vargas",
+        categoria: "Marketing",
+        estudiantes: 67,
+        precio: 1900,
+        rating: 4.5,
+        estado: "Activo",
+      },
+    ];
+
+    return allCourses.filter(
+      (r) =>
+        !this.state.coursesSearch ||
+        (r.titulo + " " + r.autor + " " + r.categoria)
+          .toLowerCase()
+          .includes(this.state.coursesSearch.toLowerCase())
+    );
+  };
+
+  getPaginatedCourses = () => {
+    const { currentPage, coursesPerPage } = this.state;
+    const filteredCourses = this.getFilteredCourses();
+    const startIndex = (currentPage - 1) * coursesPerPage;
+    const endIndex = startIndex + coursesPerPage;
+    return filteredCourses.slice(startIndex, endIndex);
+  };
+
+  // Funciones para tooltips personalizados
+  showCustomTooltip = (e, text, type = "default") => {
+    const rect = e.target.getBoundingClientRect();
+    this.setState({
+      customTooltip: {
+        show: true,
+        text: text,
+        x: rect.left + rect.width / 2,
+        y: rect.top - 10,
+        type: type,
+      },
+    });
+  };
+
+  hideCustomTooltip = () => {
+    this.setState({
+      customTooltip: {
+        show: false,
+        text: "",
+        x: 0,
+        y: 0,
+        type: "",
+      },
+    });
   };
 
   render() {
@@ -944,6 +1508,995 @@ class DashboardAdmin extends Component {
           </div>
         )}
 
+        {/* ===== MODALES DE GESTIÓN DE EVENTOS ===== */}
+
+        {/* MODAL REGISTRAR EVENTO */}
+        {this.state.showEventRegisterModal && (
+          <div
+            className="course-modal-overlay"
+            onClick={this.handleCloseEventRegister}
+          >
+            <div className="course-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="course-modal-header">
+                <h3>Registrar Nuevo Evento</h3>
+                <button
+                  className="close-modal-btn"
+                  onClick={this.handleCloseEventRegister}
+                >
+                  <i className="bx bx-x"></i>
+                </button>
+              </div>
+              <form onSubmit={this.handleSaveEvent} className="event-form">
+                <div className="form-grid">
+                  <div className="form-group-modal">
+                    <label>Título del Evento *</label>
+                    <input
+                      type="text"
+                      name="titulo"
+                      value={this.state.eventForm.titulo}
+                      onChange={this.handleEventInputChange}
+                      placeholder="Ej: Capacitación NOM-035"
+                      required
+                    />
+                  </div>
+                  <div className="form-group-modal">
+                    <label>Fecha *</label>
+                    <input
+                      type="date"
+                      name="fecha"
+                      value={this.state.eventForm.fecha}
+                      onChange={this.handleEventInputChange}
+                      required
+                    />
+                  </div>
+                  <div className="form-group-modal">
+                    <label>Hora *</label>
+                    <input
+                      type="time"
+                      name="hora"
+                      value={this.state.eventForm.hora}
+                      onChange={this.handleEventInputChange}
+                      required
+                    />
+                  </div>
+                  <div className="form-group-modal">
+                    <label>Duración *</label>
+                    <input
+                      type="text"
+                      name="duracion"
+                      value={this.state.eventForm.duracion}
+                      onChange={this.handleEventInputChange}
+                      placeholder="Ej: 2 horas"
+                      required
+                    />
+                  </div>
+                  <div className="form-group-modal">
+                    <label>Ubicación *</label>
+                    <input
+                      type="text"
+                      name="ubicacion"
+                      value={this.state.eventForm.ubicacion}
+                      onChange={this.handleEventInputChange}
+                      placeholder="Ej: Sala de Conferencias A"
+                      required
+                    />
+                  </div>
+                  <div className="form-group-modal">
+                    <label>Instructor *</label>
+                    <input
+                      type="text"
+                      name="instructor"
+                      value={this.state.eventForm.instructor}
+                      onChange={this.handleEventInputChange}
+                      placeholder="Ej: Dr. Juan Pérez"
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="form-group-modal">
+                  <label>Descripción</label>
+                  <textarea
+                    name="descripcion"
+                    value={this.state.eventForm.descripcion}
+                    onChange={this.handleEventInputChange}
+                    placeholder="Descripción del evento..."
+                    rows="3"
+                  />
+                </div>
+                <div className="modal-actions">
+                  <button
+                    type="button"
+                    className="btn-glass-base btn-glass-secondary btn-glass-md"
+                    onClick={this.handleCloseEventRegister}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn-glass-base btn-glass-success btn-glass-md"
+                  >
+                    Registrar Evento
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL LISTA DE EVENTOS */}
+        {this.state.showEventListModal && (
+          <div
+            className="course-modal-overlay"
+            onClick={this.handleCloseEventList}
+          >
+            <div
+              className="course-modal large"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="course-modal-header">
+                <h3>
+                  {this.state.modalType === "edit" &&
+                    "Seleccionar Evento para Editar"}
+                  {this.state.modalType === "delete" &&
+                    "Seleccionar Evento para Eliminar"}
+                  {this.state.modalType === "reminders" &&
+                    "Seleccionar Evento para Recordatorios"}
+                  {this.state.modalType === "attendees" &&
+                    "Seleccionar Evento para Gestionar Asistentes"}
+                  {this.state.modalType === "view" && "Lista de Eventos"}
+                </h3>
+                <button
+                  className="close-modal-btn"
+                  onClick={this.handleCloseEventList}
+                >
+                  <i className="bx bx-x"></i>
+                </button>
+              </div>
+              <div className="events-list">
+                {this.state.eventos.length === 0 ? (
+                  <div className="no-events">
+                    <FaCalendarAlt size={48} color="#666" />
+                    <p>No hay eventos registrados</p>
+                  </div>
+                ) : (
+                  this.state.eventos.map((event) => (
+                    <div key={event.id} className="event-item">
+                      <div className="event-info">
+                        <h4>{event.titulo}</h4>
+                        <p>
+                          <FaCalendarAlt /> {event.fecha} - {event.hora}
+                        </p>
+                        <p>
+                          <FaUsers /> Instructor: {event.instructor}
+                        </p>
+                        <p>
+                          <FaBook /> Ubicación: {event.ubicacion}
+                        </p>
+                        <p>
+                          <FaClock /> Duración: {event.duracion}
+                        </p>
+                        <span className={`event-status ${event.estado}`}>
+                          {event.estado}
+                        </span>
+                      </div>
+                      <div className="event-actions">
+                        {this.state.modalType === "edit" && (
+                          <button
+                            className="btn-glass-base btn-glass-primary btn-glass-sm"
+                            onClick={() => this.handleEditEvent(event)}
+                          >
+                            <FaEdit /> Editar
+                          </button>
+                        )}
+                        {this.state.modalType === "delete" && (
+                          <button
+                            className="btn-glass-base btn-glass-danger btn-glass-sm"
+                            onClick={() => this.handleDeleteEvent(event)}
+                          >
+                            <FaTrash /> Eliminar
+                          </button>
+                        )}
+                        {this.state.modalType === "reminders" && (
+                          <button
+                            className="btn-glass-base btn-glass-primary btn-glass-sm"
+                            onClick={() => this.handleConfigureReminders(event)}
+                          >
+                            <FaBell /> Recordatorios
+                          </button>
+                        )}
+                        {this.state.modalType === "attendees" && (
+                          <button
+                            className="btn-glass-base btn-glass-primary btn-glass-sm"
+                            onClick={() => this.handleManageAttendees(event)}
+                          >
+                            <FaUsers /> Asistentes
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL EDITAR EVENTO */}
+        {this.state.showEventEditModal && (
+          <div
+            className="course-modal-overlay"
+            onClick={this.handleCloseEventEdit}
+          >
+            <div className="course-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="course-modal-header">
+                <h3>Editar Evento</h3>
+                <button
+                  className="close-modal-btn"
+                  onClick={this.handleCloseEventEdit}
+                >
+                  <i className="bx bx-x"></i>
+                </button>
+              </div>
+              <form onSubmit={this.handleUpdateEvent} className="event-form">
+                <div className="form-grid">
+                  <div className="form-group-modal">
+                    <label>Título del Evento *</label>
+                    <input
+                      type="text"
+                      name="titulo"
+                      value={this.state.eventForm.titulo}
+                      onChange={this.handleEventInputChange}
+                      required
+                    />
+                  </div>
+                  <div className="form-group-modal">
+                    <label>Fecha *</label>
+                    <input
+                      type="date"
+                      name="fecha"
+                      value={this.state.eventForm.fecha}
+                      onChange={this.handleEventInputChange}
+                      required
+                    />
+                  </div>
+                  <div className="form-group-modal">
+                    <label>Hora *</label>
+                    <input
+                      type="time"
+                      name="hora"
+                      value={this.state.eventForm.hora}
+                      onChange={this.handleEventInputChange}
+                      required
+                    />
+                  </div>
+                  <div className="form-group-modal">
+                    <label>Duración *</label>
+                    <input
+                      type="text"
+                      name="duracion"
+                      value={this.state.eventForm.duracion}
+                      onChange={this.handleEventInputChange}
+                      required
+                    />
+                  </div>
+                  <div className="form-group-modal">
+                    <label>Ubicación *</label>
+                    <input
+                      type="text"
+                      name="ubicacion"
+                      value={this.state.eventForm.ubicacion}
+                      onChange={this.handleEventInputChange}
+                      required
+                    />
+                  </div>
+                  <div className="form-group-modal">
+                    <label>Instructor *</label>
+                    <input
+                      type="text"
+                      name="instructor"
+                      value={this.state.eventForm.instructor}
+                      onChange={this.handleEventInputChange}
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="form-group-modal">
+                  <label>Descripción</label>
+                  <textarea
+                    name="descripcion"
+                    value={this.state.eventForm.descripcion}
+                    onChange={this.handleEventInputChange}
+                    rows="3"
+                  />
+                </div>
+                <div className="modal-actions">
+                  <button
+                    type="button"
+                    className="btn-glass-base btn-glass-secondary btn-glass-md"
+                    onClick={this.handleCloseEventEdit}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn-glass-base btn-glass-success btn-glass-md"
+                  >
+                    Actualizar Evento
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL ELIMINAR EVENTO */}
+        {this.state.showEventDeleteModal && this.state.eventToDelete && (
+          <div
+            className="course-modal-overlay"
+            onClick={this.handleCloseEventDelete}
+          >
+            <div className="course-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="course-modal-header">
+                <h3>Eliminar Evento</h3>
+                <button
+                  className="close-modal-btn"
+                  onClick={this.handleCloseEventDelete}
+                >
+                  <i className="bx bx-x"></i>
+                </button>
+              </div>
+              <div className="delete-confirmation">
+                <div className="delete-icon">
+                  <FaTrash size={48} color="#ff5252" />
+                </div>
+                <h4>¿Estás seguro de eliminar este evento?</h4>
+                <p>
+                  <strong>{this.state.eventToDelete.titulo}</strong>
+                </p>
+                <p>
+                  Fecha: {this.state.eventToDelete.fecha} -{" "}
+                  {this.state.eventToDelete.hora}
+                </p>
+                <p>Esta acción no se puede deshacer.</p>
+                <div className="modal-actions">
+                  <button
+                    className="btn-glass-base btn-glass-secondary btn-glass-md"
+                    onClick={this.handleCloseEventDelete}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    className="btn-glass-base btn-glass-danger btn-glass-md"
+                    onClick={this.handleConfirmDeleteEvent}
+                  >
+                    Eliminar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL RECORDATORIOS */}
+        {this.state.showEventRemindersModal && this.state.selectedEvent && (
+          <div
+            className="course-modal-overlay"
+            onClick={this.handleCloseEventReminders}
+          >
+            <div className="course-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="course-modal-header">
+                <h3>Configurar Recordatorios</h3>
+                <p>{this.state.selectedEvent.titulo}</p>
+                <button
+                  className="close-modal-btn"
+                  onClick={this.handleCloseEventReminders}
+                >
+                  <i className="bx bx-x"></i>
+                </button>
+              </div>
+              <form onSubmit={this.handleSaveReminder}>
+                <div className="form-grid">
+                  <div className="form-group-modal">
+                    <label>Tipo de Recordatorio</label>
+                    <select
+                      name="tipo"
+                      value={this.state.reminderForm.tipo}
+                      onChange={this.handleReminderInputChange}
+                    >
+                      <option value="email">Email</option>
+                      <option value="sms">SMS</option>
+                      <option value="push">Notificación Push</option>
+                    </select>
+                  </div>
+                  <div className="form-group-modal">
+                    <label>Tiempo de Anticipación</label>
+                    <select
+                      name="tiempo"
+                      value={this.state.reminderForm.tiempo}
+                      onChange={this.handleReminderInputChange}
+                    >
+                      <option value="15 minutos antes">15 minutos antes</option>
+                      <option value="30 minutos antes">30 minutos antes</option>
+                      <option value="1 hora antes">1 hora antes</option>
+                      <option value="2 horas antes">2 horas antes</option>
+                      <option value="1 día antes">1 día antes</option>
+                      <option value="3 días antes">3 días antes</option>
+                      <option value="1 semana antes">1 semana antes</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="form-group-modal">
+                  <label>Mensaje Personalizado</label>
+                  <textarea
+                    name="mensaje"
+                    value={this.state.reminderForm.mensaje}
+                    onChange={this.handleReminderInputChange}
+                    placeholder="Mensaje personalizado para el recordatorio..."
+                    rows="3"
+                  />
+                </div>
+                <div className="existing-reminders">
+                  <h4>Recordatorios Actuales:</h4>
+                  {this.state.selectedEvent.recordatorios.length === 0 ? (
+                    <p>No hay recordatorios configurados</p>
+                  ) : (
+                    this.state.selectedEvent.recordatorios.map(
+                      (reminder, index) => (
+                        <div key={index} className="reminder-item">
+                          <span>
+                            {reminder.tipo} - {reminder.tiempo}
+                          </span>
+                        </div>
+                      )
+                    )
+                  )}
+                </div>
+                <div className="modal-actions">
+                  <button
+                    type="button"
+                    className="btn-glass-base btn-glass-secondary btn-glass-md"
+                    onClick={this.handleCloseEventReminders}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn-glass-base btn-glass-success btn-glass-md"
+                  >
+                    Agregar Recordatorio
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL ASISTENTES */}
+        {this.state.showEventAttendeesModal && this.state.selectedEvent && (
+          <div
+            className="course-modal-overlay"
+            onClick={this.handleCloseEventAttendees}
+          >
+            <div className="course-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="course-modal-header">
+                <h3>Gestionar Asistentes</h3>
+                <p>{this.state.selectedEvent.titulo}</p>
+                <button
+                  className="close-modal-btn"
+                  onClick={this.handleCloseEventAttendees}
+                >
+                  <i className="bx bx-x"></i>
+                </button>
+              </div>
+              <div className="attendees-manager">
+                <div className="add-attendee">
+                  <h4>Agregar Asistente</h4>
+                  <div className="attendee-input-group">
+                    <input
+                      type="text"
+                      value={this.state.newAttendee}
+                      onChange={(e) =>
+                        this.setState({ newAttendee: e.target.value })
+                      }
+                      placeholder="Nombre del asistente"
+                    />
+                    <button
+                      type="button"
+                      className="btn-glass-base btn-glass-primary btn-glass-sm"
+                      onClick={this.handleAddAttendee}
+                    >
+                      <FaPlus /> Agregar
+                    </button>
+                  </div>
+                </div>
+                <div className="attendees-list">
+                  <h4>
+                    Asistentes Registrados (
+                    {this.state.selectedEvent.asistentes.length})
+                  </h4>
+                  {this.state.selectedEvent.asistentes.length === 0 ? (
+                    <p>No hay asistentes registrados</p>
+                  ) : (
+                    this.state.selectedEvent.asistentes.map(
+                      (attendee, index) => (
+                        <div key={index} className="attendee-item">
+                          <span>{attendee}</span>
+                          <button
+                            className="btn-glass-base btn-glass-danger btn-glass-sm"
+                            onClick={() => this.handleRemoveAttendee(index)}
+                          >
+                            <FaTrash />
+                          </button>
+                        </div>
+                      )
+                    )
+                  )}
+                </div>
+              </div>
+              <div className="modal-actions">
+                <button
+                  className="btn-glass-base btn-glass-primary btn-glass-md"
+                  onClick={this.handleCloseEventAttendees}
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL REPORTES */}
+        {this.state.showEventReportsModal && (
+          <div
+            className="course-modal-overlay"
+            onClick={this.handleCloseEventReports}
+          >
+            <div
+              className="course-modal large"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="course-modal-header">
+                <h3>Generar Reportes de Eventos</h3>
+                <button
+                  className="close-modal-btn"
+                  onClick={this.handleCloseEventReports}
+                >
+                  <i className="bx bx-x"></i>
+                </button>
+              </div>
+              <div className="reports-generator">
+                <div className="report-filters">
+                  <h4>Filtros de Reporte</h4>
+                  <div className="form-grid">
+                    <div className="form-group-modal">
+                      <label>Fecha Inicio</label>
+                      <input
+                        type="date"
+                        name="fechaInicio"
+                        value={this.state.reportFilters.fechaInicio}
+                        onChange={this.handleReportFilterChange}
+                      />
+                    </div>
+                    <div className="form-group-modal">
+                      <label>Fecha Fin</label>
+                      <input
+                        type="date"
+                        name="fechaFin"
+                        value={this.state.reportFilters.fechaFin}
+                        onChange={this.handleReportFilterChange}
+                      />
+                    </div>
+                    <div className="form-group-modal">
+                      <label>Estado</label>
+                      <select
+                        name="estado"
+                        value={this.state.reportFilters.estado}
+                        onChange={this.handleReportFilterChange}
+                      >
+                        <option value="todos">Todos</option>
+                        <option value="programado">Programado</option>
+                        <option value="en-curso">En Curso</option>
+                        <option value="completado">Completado</option>
+                        <option value="cancelado">Cancelado</option>
+                      </select>
+                    </div>
+                    <div className="form-group-modal">
+                      <label>Instructor</label>
+                      <input
+                        type="text"
+                        name="instructor"
+                        value={this.state.reportFilters.instructor}
+                        onChange={this.handleReportFilterChange}
+                        placeholder="Filtrar por instructor"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="report-summary">
+                  <h4>Resumen de Eventos</h4>
+                  <div className="summary-cards">
+                    <div className="summary-card">
+                      <FaCalendarAlt size={24} />
+                      <div>
+                        <span>Total Eventos</span>
+                        <strong>{this.state.eventos.length}</strong>
+                      </div>
+                    </div>
+                    <div className="summary-card">
+                      <FaUsers size={24} />
+                      <div>
+                        <span>Total Asistentes</span>
+                        <strong>
+                          {this.state.eventos.reduce(
+                            (total, event) => total + event.asistentes.length,
+                            0
+                          )}
+                        </strong>
+                      </div>
+                    </div>
+                    <div className="summary-card">
+                      <FaCheckCircle size={24} />
+                      <div>
+                        <span>Eventos Programados</span>
+                        <strong>
+                          {
+                            this.state.eventos.filter(
+                              (e) => e.estado === "programado"
+                            ).length
+                          }
+                        </strong>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="modal-actions">
+                  <button
+                    className="btn-glass-base btn-glass-secondary btn-glass-md"
+                    onClick={this.handleCloseEventReports}
+                  >
+                    Cerrar
+                  </button>
+                  <button
+                    className="btn-glass-base btn-glass-success btn-glass-md"
+                    onClick={this.handleGenerateReport}
+                  >
+                    <FaTachometerAlt /> Generar Reporte
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL NOTIFICACIONES */}
+        {this.state.showEventNotificationsModal && (
+          <div
+            className="course-modal-overlay"
+            onClick={this.handleCloseEventNotifications}
+          >
+            <div className="course-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="course-modal-header">
+                <h3>Configuración de Notificaciones</h3>
+                <button
+                  className="close-modal-btn"
+                  onClick={this.handleCloseEventNotifications}
+                >
+                  <i className="bx bx-x"></i>
+                </button>
+              </div>
+              <div className="notification-settings">
+                <div className="setting-group">
+                  <h4>Canales de Notificación</h4>
+                  <div className="setting-item">
+                    <label className="checkbox-label">
+                      <input
+                        type="checkbox"
+                        name="emailEnabled"
+                        checked={this.state.notificationSettings.emailEnabled}
+                        onChange={this.handleNotificationSettingChange}
+                      />
+                      <span>Notificaciones por Email</span>
+                    </label>
+                  </div>
+                  <div className="setting-item">
+                    <label className="checkbox-label">
+                      <input
+                        type="checkbox"
+                        name="smsEnabled"
+                        checked={this.state.notificationSettings.smsEnabled}
+                        onChange={this.handleNotificationSettingChange}
+                      />
+                      <span>Notificaciones por SMS</span>
+                    </label>
+                  </div>
+                </div>
+                <div className="setting-group">
+                  <h4>Configuración de Recordatorios</h4>
+                  <div className="form-group-modal">
+                    <label>Tiempo de Anticipación por Defecto</label>
+                    <select
+                      name="tiempoAnticipacion"
+                      value={this.state.notificationSettings.tiempoAnticipacion}
+                      onChange={this.handleNotificationSettingChange}
+                    >
+                      <option value="15 minutos">15 minutos</option>
+                      <option value="30 minutos">30 minutos</option>
+                      <option value="1 hora">1 hora</option>
+                      <option value="2 horas">2 horas</option>
+                      <option value="1 día">1 día</option>
+                      <option value="3 días">3 días</option>
+                      <option value="1 semana">1 semana</option>
+                    </select>
+                  </div>
+                  <div className="setting-item">
+                    <label className="checkbox-label">
+                      <input
+                        type="checkbox"
+                        name="recordatorioAutomatico"
+                        checked={
+                          this.state.notificationSettings.recordatorioAutomatico
+                        }
+                        onChange={this.handleNotificationSettingChange}
+                      />
+                      <span>Recordatorios Automáticos para Nuevos Eventos</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+              <div className="modal-actions">
+                <button
+                  className="btn-glass-base btn-glass-secondary btn-glass-md"
+                  onClick={this.handleCloseEventNotifications}
+                >
+                  Cancelar
+                </button>
+                <button
+                  className="btn-glass-base btn-glass-success btn-glass-md"
+                  onClick={this.handleSaveNotificationSettings}
+                >
+                  <FaCog /> Guardar Configuración
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL NOTAS Y ANUNCIOS */}
+        {this.state.showNotesModal && (
+          <div
+            className="course-modal-overlay"
+            onClick={this.handleCloseNotesModal}
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              backgroundColor: "rgba(0, 0, 0, 0.8)",
+              backdropFilter: "blur(10px)",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              zIndex: 10000,
+            }}
+          >
+            <div
+              className="course-modal-content"
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                borderRadius: 20,
+                padding: 30,
+                maxWidth: 600,
+                width: "90%",
+                maxHeight: "80vh",
+                overflow: "auto",
+                backdropFilter: "blur(20px)",
+                border: "1px solid rgba(255, 255, 255, 0.2)",
+                boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
+              }}
+            >
+              <h3
+                style={{
+                  margin: 0,
+                  marginBottom: 20,
+                  color: "#ffffff",
+                  fontSize: 24,
+                  fontWeight: 700,
+                  textAlign: "center",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 10,
+                }}
+              >
+                <FaStickyNote size={24} />
+                Notas y Anuncios
+              </h3>
+
+              {/* Contenido de notas movido del dashboard principal */}
+              <div
+                style={{
+                  background: "rgba(255, 255, 255, 0.1)",
+                  backdropFilter: "blur(10px)",
+                  borderRadius: 15,
+                  padding: 20,
+                  border: "1px solid rgba(255, 255, 255, 0.2)",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    marginBottom: 15,
+                  }}
+                >
+                  <img
+                    src={this.state.anuncios[this.state.anuncioIndex].avatar}
+                    alt="Avatar"
+                    style={{
+                      width: 76,
+                      height: 76,
+                      borderRadius: "50%",
+                      marginRight: 15,
+                      border: "3px solid rgba(255, 255, 255, 0.3)",
+                    }}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        marginBottom: 8,
+                      }}
+                    >
+                      <h6
+                        style={{
+                          color: "#E6F1FF",
+                          margin: 0,
+                          fontSize: 16,
+                          fontWeight: 600,
+                        }}
+                      >
+                        {this.state.anuncios[this.state.anuncioIndex].nombre}
+                      </h6>
+                      {this.state.anuncios[this.state.anuncioIndex].badge && (
+                        <span
+                          style={{
+                            background: "rgba(255, 193, 7, 0.2)",
+                            color: "#ffc107",
+                            padding: "2px 8px",
+                            borderRadius: 12,
+                            fontSize: 12,
+                            fontWeight: 600,
+                            marginLeft: 10,
+                            border: "1px solid rgba(255, 193, 7, 0.3)",
+                          }}
+                        >
+                          {this.state.anuncios[this.state.anuncioIndex].badge}
+                        </span>
+                      )}
+                    </div>
+                    <p
+                      style={{
+                        color: "#B7CCE9",
+                        fontSize: 14,
+                        margin: 0,
+                        lineHeight: 1.4,
+                      }}
+                    >
+                      {this.state.anuncios[this.state.anuncioIndex].texto}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Controles de navegación */}
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginTop: 15,
+                    paddingTop: 15,
+                    borderTop: "1px solid rgba(255, 255, 255, 0.1)",
+                  }}
+                >
+                  <button
+                    onClick={this.handlePrevAnuncio}
+                    style={{
+                      background: "rgba(255, 255, 255, 0.1)",
+                      border: "1px solid rgba(255, 255, 255, 0.2)",
+                      borderRadius: 8,
+                      padding: "8px 12px",
+                      color: "#E6F1FF",
+                      cursor: "pointer",
+                      fontSize: 12,
+                      fontWeight: 600,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 5,
+                      transition: "all 0.3s ease",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.background = "rgba(255, 255, 255, 0.2)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.background = "rgba(255, 255, 255, 0.1)";
+                    }}
+                  >
+                    <FaChevronLeft size={10} />
+                    Anterior
+                  </button>
+
+                  <div
+                    style={{
+                      color: "#B7CCE9",
+                      fontSize: 12,
+                      fontWeight: 600,
+                    }}
+                  >
+                    {this.state.anuncioIndex + 1} de{" "}
+                    {this.state.anuncios.length}
+                  </div>
+
+                  <button
+                    onClick={this.handleNextAnuncio}
+                    style={{
+                      background: "rgba(255, 255, 255, 0.1)",
+                      border: "1px solid rgba(255, 255, 255, 0.2)",
+                      borderRadius: 8,
+                      padding: "8px 12px",
+                      color: "#E6F1FF",
+                      cursor: "pointer",
+                      fontSize: 12,
+                      fontWeight: 600,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 5,
+                      transition: "all 0.3s ease",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.background = "rgba(255, 255, 255, 0.2)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.background = "rgba(255, 255, 255, 0.1)";
+                    }}
+                  >
+                    Siguiente
+                    <FaChevronRight size={10} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Botón cerrar */}
+              <div style={{ textAlign: "center", marginTop: 20 }}>
+                <button
+                  onClick={this.handleCloseNotesModal}
+                  style={{
+                    background: "rgba(255, 255, 255, 0.2)",
+                    border: "1px solid rgba(255, 255, 255, 0.3)",
+                    borderRadius: 10,
+                    padding: "10px 20px",
+                    color: "#ffffff",
+                    cursor: "pointer",
+                    fontSize: 14,
+                    fontWeight: 600,
+                    transition: "all 0.3s ease",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.background = "rgba(255, 255, 255, 0.3)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.background = "rgba(255, 255, 255, 0.2)";
+                  }}
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Sidebar oculto y pestaña, fuera del flujo principal */}
         <div>
           {/* Overlay oscuro cuando sidebar está abierto */}
@@ -977,6 +2530,15 @@ class DashboardAdmin extends Component {
               <button className="sidebar-notif" title="Notificaciones">
                 <FaBell size={18} />
                 <span className="sidebar-notif-badge">2</span>
+              </button>
+              {/* Ícono de libreta justo debajo de la campanita */}
+              <button
+                className="sidebar-notif"
+                title="Notas"
+                style={{ marginTop: "48px" }}
+                onClick={this.handleOpenNotesModal}
+              >
+                <FaStickyNote size={18} />
               </button>
             </>
           )}
@@ -1251,7 +2813,7 @@ class DashboardAdmin extends Component {
                   letterSpacing: 1,
                 }}
               >
-                v0.3
+                v0.4
               </span>
               {/* <button
                 style={{
@@ -1325,7 +2887,7 @@ class DashboardAdmin extends Component {
             </div>
             {/* Recent Courses */}
             <div style={{ display: "flex", gap: 24 }}>
-              <div style={{ flex: 2 }}>
+              <div style={{ flex: 1.3 }}>
                 <div
                   style={{
                     display: "flex",
@@ -1359,7 +2921,10 @@ class DashboardAdmin extends Component {
                       <input
                         value={this.state.coursesSearch}
                         onChange={(e) =>
-                          this.setState({ coursesSearch: e.target.value })
+                          this.setState({
+                            coursesSearch: e.target.value,
+                            currentPage: 1, // Reiniciar a la primera página al buscar
+                          })
                         }
                         placeholder="Buscar cursos..."
                         style={{
@@ -1394,185 +2959,288 @@ class DashboardAdmin extends Component {
                       </tr>
                     </thead>
                     <tbody>
-                      {[
-                        {
-                          img: "https://randomuser.me/api/portraits/lego/9.jpg",
-                          titulo: "Implementación de la NOM-035 en el Trabajo",
-                          autor: "Dra. Patricia Hernández",
-                          categoria: "Seguridad Laboral",
-                          estudiantes: 32,
-                          precio: 2500,
-                          rating: 4.8,
-                          estado: "Activo",
-                        },
-                        {
-                          img: "https://randomuser.me/api/portraits/lego/9.jpg",
-                          titulo: "Curso SAT México - Facturación Electrónica",
-                          autor: "Lic. Roberto González",
-                          categoria: "Fiscal",
-                          estudiantes: 45,
-                          precio: 1800,
-                          rating: 4.6,
-                          estado: "Activo",
-                        },
-                        {
-                          img: "https://randomuser.me/api/portraits/lego/9.jpg",
-                          titulo: "Crea tu Plataforma de Gestión Empresarial",
-                          autor: "Ing. Ana Martínez",
-                          categoria: "Tecnología",
-                          estudiantes: 23,
-                          precio: 4500,
-                          rating: 4.9,
-                          estado: "Activo",
-                        },
-                        {
-                          img: "https://randomuser.me/api/portraits/lego/9.jpg",
-                          titulo: "Fundamentos de Liderazgo Empresarial",
-                          autor: "Dr. Manuel Ruiz",
-                          categoria: "Liderazgo",
-                          estudiantes: 156,
-                          precio: 0,
-                          rating: 4.4,
-                          estado: "Activo",
-                        },
-                        {
-                          img: "https://randomuser.me/api/portraits/lego/9.jpg",
-                          titulo: "Seguridad e Higiene en el Trabajo",
-                          autor: "Ing. Laura Pérez",
-                          categoria: "Seguridad Laboral",
-                          estudiantes: 18,
-                          precio: 2200,
-                          rating: 4.7,
-                          estado: "Activo",
-                        },
-                        {
-                          img: "https://randomuser.me/api/portraits/lego/9.jpg",
-                          titulo: "Marketing Digital para Empresas",
-                          autor: "Lic. Sofía Vargas",
-                          categoria: "Marketing",
-                          estudiantes: 67,
-                          precio: 1900,
-                          rating: 4.5,
-                          estado: "Activo",
-                        },
-                      ]
-                        .filter(
-                          (r) =>
-                            !this.state.coursesSearch ||
-                            (r.titulo + " " + r.autor + " " + r.categoria)
-                              .toLowerCase()
-                              .includes(this.state.coursesSearch.toLowerCase())
-                        )
-                        .map((r, i) => (
-                          <tr key={i}>
-                            <td>
-                              <div
+                      {this.getPaginatedCourses().map((r, i) => (
+                        <tr key={i}>
+                          <td>
+                            <div
+                              style={{
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                gap: 8,
+                                textAlign: "center",
+                                maxWidth: 150,
+                              }}
+                            >
+                              <img
+                                src={r.img}
+                                alt="c"
                                 style={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: 12,
+                                  width: 60,
+                                  height: 60,
+                                  borderRadius: 12,
+                                  objectFit: "cover",
+                                  border: "2px solid rgba(255,255,255,0.1)",
                                 }}
-                              >
-                                <img
-                                  src={r.img}
-                                  alt="c"
+                              />
+                              <div>
+                                <div
                                   style={{
-                                    width: 40,
-                                    height: 40,
-                                    borderRadius: 8,
+                                    fontWeight: 700,
+                                    color: "#E6F1FF",
+                                    fontSize: 14,
+                                    lineHeight: 1.3,
+                                    marginBottom: 4,
                                   }}
-                                />
-                                <div>
-                                  <div
-                                    style={{
-                                      fontWeight: 700,
-                                      color: "#E6F1FF",
-                                    }}
-                                  >
-                                    {r.titulo}
-                                  </div>
-                                  <div
-                                    style={{ color: "#B7CCE9", fontSize: 13 }}
-                                  >
-                                    {r.autor}
-                                  </div>
+                                >
+                                  {r.titulo}
+                                </div>
+                                <div
+                                  style={{
+                                    color: "#B7CCE9",
+                                    fontSize: 12,
+                                    opacity: 0.8,
+                                  }}
+                                >
+                                  {r.autor}
                                 </div>
                               </div>
-                            </td>
-                            <td>
-                              <span className="pill cat">{r.categoria}</span>
-                            </td>
-                            <td>{r.estudiantes}</td>
-                            <td>
-                              {r.precio === 0
-                                ? "$0"
-                                : `$${r.precio.toLocaleString()}`}
-                            </td>
-                            <td>
-                              <span
-                                style={{
-                                  color: "#f5a623",
-                                  fontWeight: 700,
-                                  display: "inline-flex",
-                                  alignItems: "center",
-                                  gap: 6,
-                                }}
+                            </div>
+                          </td>
+                          <td>
+                            <span className="pill cat">{r.categoria}</span>
+                          </td>
+                          <td>{r.estudiantes}</td>
+                          <td>
+                            {r.precio === 0
+                              ? "$0"
+                              : `$${r.precio.toLocaleString()}`}
+                          </td>
+                          <td>
+                            <span
+                              style={{
+                                color: "#f5a623",
+                                fontWeight: 700,
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 6,
+                              }}
+                            >
+                              <FaStar style={{ color: "#f5a623" }} /> {r.rating}
+                            </span>
+                          </td>
+                          <td>
+                            <span className="pill ok">
+                              <FaCheckCircle style={{ marginRight: 6 }} />
+                              {r.estado}
+                            </span>
+                          </td>
+                          <td>
+                            <div
+                              style={{
+                                display: "grid",
+                                gridTemplateColumns: "1fr 1fr",
+                                gridTemplateRows: "1fr 1fr",
+                                gap: 6,
+                                width: "fit-content",
+                              }}
+                            >
+                              {/* Primera fila */}
+                              <button
+                                className="btn-glass-icon primary"
+                                title="Ver"
+                                onClick={() => this.handleViewCourse(r)}
+                                style={{ gridColumn: 1, gridRow: 1 }}
                               >
-                                <FaStar style={{ color: "#f5a623" }} />{" "}
-                                {r.rating}
-                              </span>
-                            </td>
-                            <td>
-                              <span className="pill ok">
-                                <FaCheckCircle style={{ marginRight: 6 }} />
-                                {r.estado}
-                              </span>
-                            </td>
-                            <td>
-                              <div style={{ display: "flex", gap: 10 }}>
-                                <button
-                                  className="btn-glass-icon primary"
-                                  title="Ver"
-                                  onClick={() => this.handleViewCourse(r)}
-                                >
-                                  <FaEye />
-                                </button>
-                                <button
-                                  className="btn-glass-icon primary"
-                                  title="Editar"
-                                  onClick={() => this.handleEditCourse(r)}
-                                >
-                                  <FaEdit />
-                                </button>
-                                <button
-                                  className="btn-glass-icon primary"
-                                  title="Gestión de Contenido"
-                                  onClick={() =>
-                                    this.setState({
-                                      showContentDrawer: true,
-                                      selectedCourse: r,
-                                    })
-                                  }
-                                >
-                                  <FaCog />
-                                </button>
-                                <button
-                                  className="btn-glass-icon danger"
-                                  title="Eliminar"
-                                  onClick={() => this.handleDeleteCourse(r)}
-                                >
-                                  <FaTrash />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
+                                <FaEye />
+                              </button>
+                              <button
+                                className="btn-glass-icon primary"
+                                title="Editar"
+                                onClick={() => this.handleEditCourse(r)}
+                                style={{ gridColumn: 2, gridRow: 1 }}
+                              >
+                                <FaEdit />
+                              </button>
+                              {/* Segunda fila */}
+                              <button
+                                className="btn-glass-icon primary"
+                                title="Gestión de Contenido"
+                                onClick={() =>
+                                  this.setState({
+                                    showContentDrawer: true,
+                                    selectedCourse: r,
+                                  })
+                                }
+                                style={{ gridColumn: 1, gridRow: 2 }}
+                              >
+                                <FaCog />
+                              </button>
+                              <button
+                                className="btn-glass-icon danger"
+                                title="Eliminar"
+                                onClick={() => this.handleDeleteCourse(r)}
+                                style={{ gridColumn: 2, gridRow: 2 }}
+                              >
+                                <FaTrash />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
                 </div>
+
+                {/* Controles de Paginación */}
+                {(() => {
+                  const { currentPage, coursesPerPage } = this.state;
+                  const totalCourses = this.getFilteredCourses().length;
+                  const totalPages = Math.ceil(totalCourses / coursesPerPage);
+                  const startIndex = (currentPage - 1) * coursesPerPage + 1;
+                  const endIndex = Math.min(
+                    currentPage * coursesPerPage,
+                    totalCourses
+                  );
+
+                  if (totalCourses === 0) return null;
+
+                  return (
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginTop: 16,
+                        padding: "12px 16px",
+                        background: "rgba(255,255,255,0.06)",
+                        border: "1px solid rgba(255,255,255,0.12)",
+                        borderRadius: 12,
+                        backdropFilter: "blur(10px)",
+                      }}
+                    >
+                      {/* Información de paginación */}
+                      <div
+                        style={{
+                          color: "#B7CCE9",
+                          fontSize: 14,
+                          fontWeight: 500,
+                        }}
+                      >
+                        Mostrando {startIndex} - {endIndex} de {totalCourses}{" "}
+                        cursos
+                      </div>
+
+                      {/* Controles de navegación */}
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 12,
+                        }}
+                      >
+                        {/* Botón Anterior */}
+                        <button
+                          onClick={this.handlePrevPage}
+                          disabled={currentPage === 1}
+                          style={{
+                            background:
+                              currentPage === 1
+                                ? "rgba(255,255,255,0.04)"
+                                : "linear-gradient(135deg, rgba(0,229,255,0.25), rgba(25,118,210,0.25))",
+                            border: "1px solid rgba(255,255,255,0.12)",
+                            color: currentPage === 1 ? "#666" : "#00e5ff",
+                            borderRadius: 8,
+                            padding: "8px 12px",
+                            cursor:
+                              currentPage === 1 ? "not-allowed" : "pointer",
+                            fontSize: 13,
+                            fontWeight: 600,
+                            transition: "all 0.2s ease",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
+                          }}
+                          onMouseEnter={(e) => {
+                            if (currentPage !== 1) {
+                              e.target.style.background =
+                                "linear-gradient(135deg, rgba(0,229,255,0.35), rgba(25,118,210,0.35))";
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (currentPage !== 1) {
+                              e.target.style.background =
+                                "linear-gradient(135deg, rgba(0,229,255,0.25), rgba(25,118,210,0.25))";
+                            }
+                          }}
+                        >
+                          <FaChevronLeft size={12} />
+                          Anterior
+                        </button>
+
+                        {/* Indicador de página */}
+                        <div
+                          style={{
+                            background: "rgba(0,229,255,0.15)",
+                            border: "1px solid rgba(0,229,255,0.3)",
+                            borderRadius: 8,
+                            padding: "8px 16px",
+                            color: "#00e5ff",
+                            fontSize: 14,
+                            fontWeight: 700,
+                          }}
+                        >
+                          {currentPage} de {totalPages}
+                        </div>
+
+                        {/* Botón Siguiente */}
+                        <button
+                          onClick={this.handleNextPage}
+                          disabled={currentPage === totalPages}
+                          style={{
+                            background:
+                              currentPage === totalPages
+                                ? "rgba(255,255,255,0.04)"
+                                : "linear-gradient(135deg, rgba(0,229,255,0.25), rgba(25,118,210,0.25))",
+                            border: "1px solid rgba(255,255,255,0.12)",
+                            color:
+                              currentPage === totalPages ? "#666" : "#00e5ff",
+                            borderRadius: 8,
+                            padding: "8px 12px",
+                            cursor:
+                              currentPage === totalPages
+                                ? "not-allowed"
+                                : "pointer",
+                            fontSize: 13,
+                            fontWeight: 600,
+                            transition: "all 0.2s ease",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
+                          }}
+                          onMouseEnter={(e) => {
+                            if (currentPage !== totalPages) {
+                              e.target.style.background =
+                                "linear-gradient(135deg, rgba(0,229,255,0.35), rgba(25,118,210,0.35))";
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (currentPage !== totalPages) {
+                              e.target.style.background =
+                                "linear-gradient(135deg, rgba(0,229,255,0.25), rgba(25,118,210,0.25))";
+                            }
+                          }}
+                        >
+                          Siguiente
+                          <FaChevronRight size={12} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
               {/* Chart/Events */}
-              <div style={{ flex: 1 }}>
+              <div style={{ flex: 1.7, minWidth: 500 }}>
                 <h3
                   style={{
                     color: "#E6F1FF",
@@ -1713,68 +3381,35 @@ class DashboardAdmin extends Component {
                         </button>
                       </div>
 
-                      {(() => {
-                        if (!this.cmCardsRef)
-                          this.cmCardsRef = React.createRef();
-                        const scrollCards = (dir) => {
-                          const el = this.cmCardsRef.current;
-                          if (!el) return;
-                          const step = Math.min(320, el.clientWidth * 0.9);
-                          el.scrollBy({ left: dir * step, behavior: "smooth" });
-                        };
-                        return (
-                          <div className="cm-cards-wrap">
-                            <button
-                              className="cm-nav left"
-                              onClick={() => scrollCards(-1)}
-                              aria-label="Anterior"
-                            >
-                              <FaChevronLeft />
-                            </button>
-                            <div
-                              className="cm-cards scroller"
-                              ref={this.cmCardsRef}
-                            >
-                              <div className="cm-card">
-                                <div className="cm-card-title">Videos</div>
-                                <div className="cm-card-number">
-                                  {counts.totals.video}
-                                </div>
-                                <div className="cm-card-sub">
-                                  +{counts.weekly.video} esta semana
-                                </div>
-                              </div>
-                              <div className="cm-card">
-                                <div className="cm-card-title">Documentos</div>
-                                <div className="cm-card-number">
-                                  {counts.totals.documento}
-                                </div>
-                                <div className="cm-card-sub">
-                                  +{counts.weekly.documento} esta semana
-                                </div>
-                              </div>
-                              <div className="cm-card">
-                                <div className="cm-card-title">
-                                  Evaluaciones
-                                </div>
-                                <div className="cm-card-number">
-                                  {counts.totals.evaluacion}
-                                </div>
-                                <div className="cm-card-sub">
-                                  +{counts.weekly.evaluacion} esta semana
-                                </div>
-                              </div>
-                            </div>
-                            <button
-                              className="cm-nav right"
-                              onClick={() => scrollCards(1)}
-                              aria-label="Siguiente"
-                            >
-                              <FaChevronRight />
-                            </button>
+                      <div className="cm-cards-grid">
+                        <div className="cm-card">
+                          <div className="cm-card-title">Videos</div>
+                          <div className="cm-card-number">
+                            {counts.totals.video}
                           </div>
-                        );
-                      })()}
+                          <div className="cm-card-sub">
+                            +{counts.weekly.video} esta semana
+                          </div>
+                        </div>
+                        <div className="cm-card">
+                          <div className="cm-card-title">Documentos</div>
+                          <div className="cm-card-number">
+                            {counts.totals.documento}
+                          </div>
+                          <div className="cm-card-sub">
+                            +{counts.weekly.documento} esta semana
+                          </div>
+                        </div>
+                        <div className="cm-card">
+                          <div className="cm-card-title">Evaluaciones</div>
+                          <div className="cm-card-number">
+                            {counts.totals.evaluacion}
+                          </div>
+                          <div className="cm-card-sub">
+                            +{counts.weekly.evaluacion} esta semana
+                          </div>
+                        </div>
+                      </div>
 
                       <div className="cm-actions-row">
                         <div className="left">
@@ -2006,18 +3641,12 @@ class DashboardAdmin extends Component {
                       )}
 
                       <style>{`
-                        .cm-cards-wrap { position:relative; margin:12px 0 10px; }
-                        .cm-cards.scroller { display:flex; gap:14px; overflow-x:auto; scroll-snap-type:x mandatory; scroll-behavior:smooth; padding: 6px 4px 12px; }
-                        .cm-cards.scroller::-webkit-scrollbar { height: 8px; }
-                        .cm-cards.scroller::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 8px; }
-                        .cm-card { flex: 0 0 280px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:20px; box-shadow:0 8px 32px rgba(0,0,0,0.2); scroll-snap-align:start; backdrop-filter:blur(10px); position:relative; overflow:hidden; }
+                        .cm-cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin: 12px 0 10px; }
+                        .cm-card { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:14px; box-shadow:0 4px 16px rgba(0,0,0,0.15); backdrop-filter:blur(10px); position:relative; overflow:hidden; }
                         .cm-card::before { content:''; position:absolute; top:0; left:0; right:0; height:1px; background:linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent); }
-                        .cm-card-title { color:#E6F1FF; font-weight:700; margin-bottom:8px; font-size:14px; }
-                        .cm-card-number { font-size:36px; font-weight:800; color:#fff; text-shadow:0 0 20px rgba(255,255,255,0.3); }
-                        .cm-card-sub { color:#B7CCE9; font-size:12px; margin:12px 0 4px; opacity:0.8; }
-                        .cm-nav { position:absolute; top:50%; transform: translateY(-50%); background:#0e1223; color:#fff; border:1px solid #0e1223; border-radius:50%; width:36px; height:36px; display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.25); }
-                        .cm-nav.left { left:-8px; }
-                        .cm-nav.right { right:-8px; }
+                        .cm-card-title { color:#E6F1FF; font-weight:700; margin-bottom:6px; font-size:12px; }
+                        .cm-card-number { font-size:24px; font-weight:800; color:#fff; text-shadow:0 0 15px rgba(255,255,255,0.3); }
+                        .cm-card-sub { color:#B7CCE9; font-size:11px; margin:8px 0 2px; opacity:0.8; }
                         .cm-actions-row { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:16px 0 12px; flex-wrap:wrap; }
                         .btn-ghost { background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:10px 16px; cursor:pointer; font-weight:600; color:#B7CCE9; backdrop-filter:blur(5px); transition:all 0.2s ease; }
                         .btn-ghost:hover { background:rgba(255,255,255,0.1); transform:translateY(-1px); }
@@ -2056,7 +3685,7 @@ class DashboardAdmin extends Component {
                         /* Modal header and close button alignment */
                         .upload-modal-header { display:flex; align-items:center; gap: 8px; }
                         .upload-modal-header .close-modal-btn { margin-left:auto; }
-                        @media (max-width: 840px) { .cm-nav.left { left: 4px; } .cm-nav.right { right: 4px; } .search-input { width: 100%; } }
+                        @media (max-width: 840px) { .cm-cards-grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; } .search-input { width: 100%; } }
                       `}</style>
                     </div>
                   );
@@ -2119,248 +3748,882 @@ class DashboardAdmin extends Component {
                   style={{
                     background: "rgba(255,255,255,0.06)",
                     border: "1px solid rgba(255,255,255,0.12)",
-                    borderRadius: 12,
-                    padding: 16,
+                    borderRadius: 16,
+                    padding: 24,
                     marginTop: 32,
-                    textAlign: "center",
                     boxShadow:
                       "0 12px 32px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.14), 0 0 0 1px rgba(255,255,255,0.08) inset, 0 0 24px rgba(0,229,255,0.08)",
                     backdropFilter: "blur(10px)",
                     WebkitBackdropFilter: "blur(10px)",
+                    width: "70%",
                   }}
                 >
-                  <span
-                    style={{
-                      color: "#E6F1FF",
-                      fontWeight: 600,
-                      display: "block",
-                      marginBottom: 12,
-                    }}
-                  >
-                    Gráfica de Inscripciones
-                  </span>
-                  <LineChart
-                    height={220}
-                    series={[
-                      {
-                        data: [
-                          120, 140, 180, 220, 260, 300, 340, 370, 400, 430, 460,
-                          500,
-                        ],
-                        label: "Usuarios",
-                        color: "#1976d2",
-                        area: true,
-                      },
-                      {
-                        data: [10, 15, 18, 22, 25, 28, 30, 32, 35, 37, 40, 45],
-                        label: "Cursos",
-                        color: "#8e24aa",
-                        area: true,
-                      },
-                      {
-                        data: [
-                          60, 80, 100, 120, 140, 160, 180, 200, 220, 240, 260,
-                          280,
-                        ],
-                        label: "Inscripciones",
-                        color: "#ff9800",
-                        area: true,
-                      },
-                    ]}
-                    xAxis={[
-                      {
-                        scaleType: "point",
-                        data: [
-                          "Ene",
-                          "Feb",
-                          "Mar",
-                          "Abr",
-                          "May",
-                          "Jun",
-                          "Jul",
-                          "Ago",
-                          "Sep",
-                          "Oct",
-                          "Nov",
-                          "Dic",
-                        ],
-                        label: "Mes",
-                      },
-                    ]}
-                    yAxis={[{ label: "Cantidad" }]}
-                    grid={{ vertical: true, horizontal: true }}
-                    sx={{
-                      background: "transparent",
-                      borderRadius: 3,
-                      "--ChartsLegend-rootOffsetY": "12px",
-                      "--ChartsLegend-rootOffsetX": "0px",
-                      "--ChartsLegend-labelFontWeight": 600,
-                      "--ChartsLegend-labelFontSize": "15px",
-                    }}
-                  />
-                </div>
-                {/* Más contenido para scroll */}
-                <div style={{ marginTop: 40 }}>
-                  <h4
-                    style={{
-                      color: "#E6F1FF",
-                      fontWeight: 600,
-                      marginBottom: 12,
-                    }}
-                  >
-                    Usuarios Recientes
-                  </h4>
-                  <div className="usuarios-recientes-table">
-                    <div className="usuarios-recientes-header">
-                      <span>Nombre</span>
-                      <span>Correo</span>
-                      <span>Rol</span>
-                    </div>
-                    {[...Array(5)].map((_, i) => (
-                      <div key={i} className="usuarios-recientes-row">
-                        <span className="usuarios-recientes-nombre">
-                          Usuario {i + 1}
-                        </span>
-                        <span className="usuarios-recientes-correo">
-                          usuario{i + 1}@mail.com
-                        </span>
-                        <span className="usuarios-recientes-rol">admin</span>
+                  {/* Dashboard Header */}
+                  <div style={{ marginBottom: 24, textAlign: "center" }}>
+                    <FaTachometerAlt
+                      size={28}
+                      style={{ color: "#00e5ff", marginBottom: 8 }}
+                    />
+                    <h4
+                      style={{
+                        color: "#E6F1FF",
+                        margin: 0,
+                        fontSize: 18,
+                        fontWeight: 600,
+                      }}
+                    >
+                      Panel de Control de Eventos
+                    </h4>
+                  </div>
+
+                  {/* ACCIONES PRINCIPALES - CRUD */}
+                  <div style={{ marginBottom: 24 }}>
+                    <h5
+                      style={{
+                        color: "#00e5ff",
+                        fontSize: 14,
+                        fontWeight: 700,
+                        marginBottom: 12,
+                        textTransform: "uppercase",
+                        letterSpacing: "1px",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        width: "100%",
+                      }}
+                    >
+                      <FaBook size={14} />
+                      Acciones Principales
+                    </h5>
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(4, 1fr)",
+                        gap: 8,
+                        width: "100%",
+                        maxWidth: "100%",
+                      }}
+                    >
+                      {/* Registrar Eventos - Card Principal */}
+                      <div
+                        className="event-card primary"
+                        onClick={this.handleOpenEventRegister}
+                        style={{
+                          background:
+                            "linear-gradient(135deg, rgba(0,229,255,0.15), rgba(25,118,210,0.15))",
+                          border: "2px solid rgba(0,229,255,0.3)",
+                          borderRadius: 12,
+                          padding: 15,
+                          cursor: "pointer",
+                          transition: "all 0.3s ease",
+                          position: "relative",
+                          overflow: "hidden",
+                          width: "100%",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          height: "50%",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.transform = "translateY(-4px)";
+                          e.target.style.boxShadow =
+                            "0 16px 40px rgba(0,229,255,0.25)";
+                          e.target.style.borderColor = "rgba(0,229,255,0.5)";
+                          this.showCustomTooltip(
+                            e,
+                            "Crear o registrar nuevos eventos y capacitaciones",
+                            "primary"
+                          );
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.transform = "translateY(0)";
+                          e.target.style.boxShadow = "none";
+                          e.target.style.borderColor = "rgba(0,229,255,0.3)";
+                          this.hideCustomTooltip();
+                        }}
+                      >
+                        <FaCalendarAlt size={22} style={{ color: "#00e5ff" }} />
                       </div>
-                    ))}
+
+                      {/* Ver Lista - Card Secundaria */}
+                      <div
+                        className="event-card secondary"
+                        onClick={this.handleOpenEventList}
+                        style={{
+                          background: "rgba(76,175,80,0.12)",
+                          border: "1px solid rgba(76,175,80,0.3)",
+                          borderRadius: 12,
+                          padding: 16,
+                          cursor: "pointer",
+                          transition: "all 0.3s ease",
+                          textAlign: "center",
+                          width: "100%",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          height: "50%",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.transform = "translateY(-2px)";
+                          e.target.style.background = "rgba(76,175,80,0.18)";
+                          this.showCustomTooltip(
+                            e,
+                            "Ver lista de eventos registrados",
+                            "success"
+                          );
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.transform = "translateY(0)";
+                          e.target.style.background = "rgba(76,175,80,0.12)";
+                          this.hideCustomTooltip();
+                        }}
+                      >
+                        <FaEye size={22} style={{ color: "#66bb6a" }} />
+                      </div>
+
+                      {/* Modificar - Card Secundaria */}
+                      <div
+                        className="event-card secondary"
+                        onClick={this.handleOpenEventEdit}
+                        style={{
+                          background: "rgba(255,193,7,0.12)",
+                          border: "1px solid rgba(255,193,7,0.3)",
+                          borderRadius: 12,
+                          padding: 16,
+                          cursor: "pointer",
+                          transition: "all 0.3s ease",
+                          textAlign: "center",
+                          width: "100%",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          height: "50%",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.transform = "translateY(-2px)";
+                          e.target.style.background = "rgba(255,193,7,0.18)";
+                          this.showCustomTooltip(
+                            e,
+                            "Modificar o editar eventos existentes",
+                            "warning"
+                          );
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.transform = "translateY(0)";
+                          e.target.style.background = "rgba(255,193,7,0.12)";
+                          this.hideCustomTooltip();
+                        }}
+                      >
+                        <FaEdit size={22} style={{ color: "#ffca28" }} />
+                      </div>
+
+                      {/* Eliminar - Card Secundaria */}
+                      <div
+                        className="event-card secondary danger"
+                        onClick={this.handleOpenEventDelete}
+                        style={{
+                          background: "rgba(244,67,54,0.12)",
+                          border: "1px solid rgba(244,67,54,0.3)",
+                          borderRadius: 12,
+                          padding: 16,
+                          cursor: "pointer",
+                          transition: "all 0.3s ease",
+                          textAlign: "center",
+                          width: "100%",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          height: "50%",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.transform = "translateY(-2px)";
+                          e.target.style.background = "rgba(244,67,54,0.18)";
+                          this.showCustomTooltip(
+                            e,
+                            "Eliminar eventos seleccionados",
+                            "danger"
+                          );
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.transform = "translateY(0)";
+                          e.target.style.background = "rgba(244,67,54,0.12)";
+                          this.hideCustomTooltip();
+                        }}
+                      >
+                        <FaTrash size={22} style={{ color: "#f44336" }} />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* ACCIONES SECUNDARIAS - Gestión */}
+                  <div style={{ marginBottom: 24 }}>
+                    <h5
+                      style={{
+                        color: "#ab47bc",
+                        fontSize: 14,
+                        fontWeight: 700,
+                        marginTop: -30,
+                        marginBottom: 12,
+                        textTransform: "uppercase",
+                        letterSpacing: "1px",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                      }}
+                    >
+                      <FaUsers size={14} />
+                      Gestión de Eventos
+                    </h5>
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns:
+                          "repeat(auto-fit, minmax(220px, 1fr))",
+                        gap: 16,
+                      }}
+                    >
+                      {/* Gestionar Asistentes */}
+                      <div
+                        className="event-card tertiary"
+                        onClick={this.handleOpenEventAttendees}
+                        style={{
+                          background: "rgba(156,39,176,0.12)",
+                          border: "1px solid rgba(156,39,176,0.25)",
+                          borderRadius: 10,
+                          padding: 14,
+                          cursor: "pointer",
+                          transition: "all 0.3s ease",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 12,
+                          width: "100%",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.background = "rgba(156,39,176,0.18)";
+                          e.target.style.transform = "translateY(-1px)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.background = "rgba(156,39,176,0.12)";
+                          e.target.style.transform = "translateY(0)";
+                        }}
+                      >
+                        <FaUsers size={20} style={{ color: "#ab47bc" }} />
+                        <div>
+                          <h6
+                            style={{
+                              color: "#E6F1FF",
+                              margin: 0,
+                              fontSize: 13,
+                              fontWeight: 600,
+                            }}
+                          >
+                            Gestionar Asistentes
+                          </h6>
+                          <p
+                            style={{
+                              color: "#B7CCE9",
+                              fontSize: 10,
+                              margin: "2px 0 0 0",
+                            }}
+                          >
+                            Agregar/quitar participantes
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Generar Reportes */}
+                      <div
+                        className="event-card tertiary"
+                        onClick={this.handleOpenEventReports}
+                        style={{
+                          background: "rgba(255,193,7,0.12)",
+                          border: "1px solid rgba(255,193,7,0.25)",
+                          borderRadius: 10,
+                          padding: 14,
+                          cursor: "pointer",
+                          transition: "all 0.3s ease",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 12,
+                          width: "100%",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.background = "rgba(255,193,7,0.18)";
+                          e.target.style.transform = "translateY(-1px)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.background = "rgba(255,193,7,0.12)";
+                          e.target.style.transform = "translateY(0)";
+                        }}
+                      >
+                        <FaTachometerAlt
+                          size={20}
+                          style={{ color: "#ffca28" }}
+                        />
+                        <div>
+                          <h6
+                            style={{
+                              color: "#E6F1FF",
+                              margin: 0,
+                              fontSize: 13,
+                              fontWeight: 600,
+                            }}
+                          >
+                            Generar Reportes
+                          </h6>
+                          <p
+                            style={{
+                              color: "#B7CCE9",
+                              fontSize: 10,
+                              margin: "2px 0 0 0",
+                            }}
+                          >
+                            Estadísticas y análisis
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* CONFIGURACIÓN Y NOTIFICACIONES */}
+                  <div>
+                    <h5
+                      style={{
+                        color: "#78909c",
+                        fontSize: 14,
+                        fontWeight: 700,
+                        marginBottom: 12,
+                        textTransform: "uppercase",
+                        letterSpacing: "1px",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                      }}
+                    >
+                      <FaCog size={14} />
+                      Configuración
+                    </h5>
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr",
+                        gap: 20,
+                        justifyItems: "center",
+                        maxWidth: "600px",
+                        margin: "0 auto",
+                      }}
+                    >
+                      {/* Configurar Recordatorios */}
+                      <div
+                        className="event-card config"
+                        onClick={this.handleOpenEventReminders}
+                        style={{
+                          background: "rgba(96,125,139,0.12)",
+                          border: "1px solid rgba(96,125,139,0.25)",
+                          borderRadius: 10,
+                          padding: 20,
+                          cursor: "pointer",
+                          transition: "all 0.3s ease",
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          textAlign: "center",
+                          width: "100%",
+                          minHeight: "120px",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.background = "rgba(96,125,139,0.18)";
+                          e.target.style.transform = "translateY(-2px)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.background = "rgba(96,125,139,0.12)";
+                          e.target.style.transform = "translateY(0)";
+                        }}
+                      >
+                        <FaBell
+                          size={24}
+                          style={{ color: "#78909c", marginBottom: 8 }}
+                        />
+                        <h6
+                          style={{
+                            color: "#E6F1FF",
+                            margin: 0,
+                            fontSize: 14,
+                            fontWeight: 600,
+                          }}
+                        >
+                          Configurar Recordatorios
+                        </h6>
+                        <p
+                          style={{
+                            color: "#B7CCE9",
+                            fontSize: 11,
+                            margin: "4px 0 0 0",
+                          }}
+                        >
+                          Alertas y notificaciones
+                        </p>
+                      </div>
+
+                      {/* Configurar Notificaciones */}
+                      <div
+                        className="event-card config"
+                        onClick={this.handleOpenEventNotifications}
+                        style={{
+                          background: "rgba(96,125,139,0.12)",
+                          border: "1px solid rgba(96,125,139,0.25)",
+                          borderRadius: 10,
+                          padding: 20,
+                          cursor: "pointer",
+                          transition: "all 0.3s ease",
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          textAlign: "center",
+                          width: "100%",
+                          minHeight: "120px",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.background = "rgba(96,125,139,0.18)";
+                          e.target.style.transform = "translateY(-2px)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.transform = "translateY(0)";
+                          e.target.style.background = "rgba(96,125,139,0.12)";
+                        }}
+                      >
+                        <FaCog
+                          size={24}
+                          style={{ color: "#78909c", marginBottom: 8 }}
+                        />
+                        <h6
+                          style={{
+                            color: "#E6F1FF",
+                            margin: 0,
+                            fontSize: 14,
+                            fontWeight: 600,
+                          }}
+                        >
+                          Configurar Notificaciones
+                        </h6>
+                        <p
+                          style={{
+                            color: "#B7CCE9",
+                            fontSize: 11,
+                            margin: "4px 0 0 0",
+                          }}
+                        >
+                          Ajustes generales
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Stats rápidas */}
+                  <div
+                    style={{
+                      marginTop: 20,
+                      padding: 12,
+                      background: "rgba(0,0,0,0.2)",
+                      borderRadius: 8,
+                      display: "flex",
+                      justifyContent: "space-around",
+                      alignItems: "center",
+                      width: "100%",
+                    }}
+                  >
+                    <div style={{ textAlign: "center" }}>
+                      <div
+                        style={{
+                          color: "#00e5ff",
+                          fontSize: 18,
+                          fontWeight: 700,
+                        }}
+                      >
+                        {this.state.eventos.length}
+                      </div>
+                      <div style={{ color: "#B7CCE9", fontSize: 11 }}>
+                        Total Eventos
+                      </div>
+                    </div>
+                    <div style={{ textAlign: "center" }}>
+                      <div
+                        style={{
+                          color: "#66bb6a",
+                          fontSize: 18,
+                          fontWeight: 700,
+                        }}
+                      >
+                        {
+                          this.state.eventos.filter(
+                            (e) => e.estado === "programado"
+                          ).length
+                        }
+                      </div>
+                      <div style={{ color: "#B7CCE9", fontSize: 11 }}>
+                        Programados
+                      </div>
+                    </div>
+                    <div style={{ textAlign: "center" }}>
+                      <div
+                        style={{
+                          color: "#ffca28",
+                          fontSize: 18,
+                          fontWeight: 700,
+                        }}
+                      >
+                        {this.state.eventos.reduce(
+                          (total, event) => total + event.asistentes.length,
+                          0
+                        )}
+                      </div>
+                      <div style={{ color: "#B7CCE9", fontSize: 11 }}>
+                        Asistentes
+                      </div>
+                    </div>
                   </div>
                 </div>
+                {/* Métricas de Usuario */}
                 <div style={{ marginTop: 40 }}>
                   <h4
                     style={{
                       color: "#E6F1FF",
                       fontWeight: 600,
-                      marginBottom: 50,
+                      marginBottom: 20,
                       textAlign: "center",
                     }}
                   >
-                    Notas y Anuncios
+                    Métricas de Usuario
                   </h4>
-                  {(() => {
-                    const anuncio =
-                      this.state.anuncios[this.state.anuncioIndex];
-                    return (
+
+                  {/* Card de Nuevos Usuarios */}
+                  <div
+                    style={{
+                      background: "rgba(255,255,255,0.06)",
+                      border: "1px solid rgba(0,229,255,0.2)",
+                      borderRadius: 16,
+                      padding: 24,
+                      marginBottom: 20,
+                      boxShadow:
+                        "0 8px 32px rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.08) inset",
+                      backdropFilter: "blur(10px)",
+                      position: "relative",
+                      overflow: "hidden",
+                    }}
+                  >
+                    {/* Efecto de brillo sutil */}
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        height: "1px",
+                        background:
+                          "linear-gradient(90deg, transparent, rgba(0,229,255,0.4), transparent)",
+                      }}
+                    />
+
+                    <div style={{ marginBottom: 8 }}>
+                      <h5
+                        style={{
+                          color: "#E6F1FF",
+                          margin: 0,
+                          fontSize: 16,
+                          fontWeight: 600,
+                        }}
+                      >
+                        Nuevos Usuarios
+                      </h5>
+                      <p
+                        style={{
+                          color: "#B7CCE9",
+                          margin: 0,
+                          fontSize: 12,
+                          opacity: 0.8,
+                        }}
+                      >
+                        (Últimos 7 días)
+                      </p>
+                    </div>
+
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        marginBottom: 12,
+                      }}
+                    >
                       <div
                         style={{
-                          background: "rgba(255,255,255,0.06)",
-                          borderRadius: 16,
-                          boxShadow:
-                            "0 12px 32px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.14), 0 0 0 1px rgba(255,255,255,0.08) inset, 0 0 24px rgba(0,229,255,0.08)",
-                          padding: 32,
-                          border: "1px solid rgba(255,255,255,0.12)",
-                          maxWidth: 420,
-                          margin: "0 auto",
-                          position: "relative",
-                          textAlign: "center",
-                          backdropFilter: "blur(10px)",
-                          WebkitBackdropFilter: "blur(10px)",
+                          fontSize: 48,
+                          fontWeight: 800,
+                          color: "#fff",
+                          textShadow: "0 0 20px rgba(255,255,255,0.3)",
+                          lineHeight: 1,
+                        }}
+                      >
+                        82
+                      </div>
+
+                      {/* Gráfico mini de tendencia */}
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                        }}
+                      >
+                        {/* SVG mini chart */}
+                        <svg width="60" height="30" viewBox="0 0 60 30">
+                          <polyline
+                            points="0,25 10,20 20,15 30,10 40,8 50,5 60,3"
+                            fill="none"
+                            stroke="#00e5ff"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                          <defs>
+                            <linearGradient
+                              id="chartGradient"
+                              x1="0%"
+                              y1="0%"
+                              x2="0%"
+                              y2="100%"
+                            >
+                              <stop
+                                offset="0%"
+                                stopColor="rgba(0,229,255,0.3)"
+                              />
+                              <stop
+                                offset="100%"
+                                stopColor="rgba(0,229,255,0.05)"
+                              />
+                            </linearGradient>
+                          </defs>
+                          <polygon
+                            points="0,25 10,20 20,15 30,10 40,8 50,5 60,3 60,30 0,30"
+                            fill="url(#chartGradient)"
+                          />
+                        </svg>
+                      </div>
+                    </div>
+
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                      }}
+                    >
+                      <span
+                        style={{
+                          color: "#4ade80",
+                          fontSize: 14,
+                          fontWeight: 600,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 4,
+                        }}
+                      >
+                        ↗ 15%
+                      </span>
+                      <span
+                        style={{
+                          color: "#B7CCE9",
+                          fontSize: 12,
+                        }}
+                      >
+                        vs la semana pasada
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Card de Actividad Reciente */}
+                  <div
+                    style={{
+                      background: "rgba(255,255,255,0.06)",
+                      border: "1px solid rgba(255,255,255,0.12)",
+                      borderRadius: 16,
+                      padding: 24,
+                      boxShadow:
+                        "0 8px 32px rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.08) inset",
+                      backdropFilter: "blur(10px)",
+                    }}
+                  >
+                    <h5
+                      style={{
+                        color: "#E6F1FF",
+                        margin: "0 0 20px 0",
+                        fontSize: 16,
+                        fontWeight: 600,
+                      }}
+                    >
+                      Actividad Reciente
+                    </h5>
+
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 16,
+                      }}
+                    >
+                      {/* Usuario 1 */}
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 12,
+                          padding: "12px 0",
+                          borderBottom: "1px solid rgba(255,255,255,0.08)",
                         }}
                       >
                         <div
                           style={{
-                            position: "absolute",
-                            top: -38,
-                            left: "50%",
-                            transform: "translateX(-50%)",
+                            width: 40,
+                            height: 40,
+                            borderRadius: "50%",
+                            background:
+                              "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: "white",
+                            fontWeight: 700,
+                            fontSize: 14,
+                            border: "2px solid rgba(255,255,255,0.2)",
                           }}
                         >
-                          <img
-                            src={anuncio.avatar}
-                            alt="avatar"
-                            style={{
-                              width: 76,
-                              height: 76,
-                              borderRadius: "50%",
-                              border: "4px solid #fff",
-                              boxShadow: "0 2px 8px #0001",
-                            }}
-                          />
+                          U5
                         </div>
-                        {anuncio.badge && (
+                        <div style={{ flex: 1 }}>
                           <div
                             style={{
-                              position: "absolute",
-                              top: 8,
-                              right: 16,
-                              background: "#fff",
-                              color: "#E87D23",
-                              borderRadius: "50%",
-                              width: 32,
-                              height: 32,
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              fontWeight: 700,
-                              fontSize: 15,
-                              boxShadow: "0 2px 8px #0001",
+                              color: "#E6F1FF",
+                              fontSize: 14,
+                              fontWeight: 600,
+                              marginBottom: 2,
                             }}
                           >
-                            {anuncio.badge}
+                            Usuario 5 se registró.
                           </div>
-                        )}
-                        <div
-                          style={{
-                            marginTop: 48,
-                            fontWeight: 700,
-                            fontSize: 20,
-                          }}
-                        >
-                          <span style={{ color: "#E6F1FF" }}>
-                            {anuncio.nombre}
-                          </span>
-                        </div>
-                        <div
-                          style={{
-                            color: "#444",
-                            margin: "18px 0 28px 0",
-                            fontSize: 16,
-                          }}
-                        >
-                          <span style={{ color: "#B7CCE9" }}>
-                            {anuncio.texto}
-                          </span>
-                        </div>
-                        <div
-                          style={{
-                            display: "flex",
-                            justifyContent: "center",
-                            gap: 32,
-                          }}
-                        >
-                          <button
-                            onClick={this.handlePrevAnuncio}
+                          <div
                             style={{
-                              background: "none",
-                              border: "none",
-                              cursor: "pointer",
+                              color: "#B7CCE9",
+                              fontSize: 12,
+                              opacity: 0.7,
                             }}
                           >
-                            <FaChevronLeft
-                              size={28}
-                              style={{ color: "#E87D23" }}
-                            />
-                          </button>
-                          <button
-                            onClick={this.handleNextAnuncio}
-                            style={{
-                              background: "none",
-                              border: "none",
-                              cursor: "pointer",
-                            }}
-                          >
-                            <FaChevronRight
-                              size={28}
-                              style={{ color: "#E87D23" }}
-                            />
-                          </button>
+                            hace 10 minutos
+                          </div>
                         </div>
                       </div>
-                    );
-                  })()}
+
+                      {/* Usuario 2 */}
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 12,
+                          padding: "12px 0",
+                          borderBottom: "1px solid rgba(255,255,255,0.08)",
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: 40,
+                            height: 40,
+                            borderRadius: "50%",
+                            background:
+                              "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: "white",
+                            fontWeight: 700,
+                            fontSize: 14,
+                            border: "2px solid rgba(255,255,255,0.2)",
+                          }}
+                        >
+                          U4
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div
+                            style={{
+                              color: "#E6F1FF",
+                              fontSize: 14,
+                              fontWeight: 600,
+                              marginBottom: 2,
+                            }}
+                          >
+                            Usuario 4 se registró.
+                          </div>
+                          <div
+                            style={{
+                              color: "#B7CCE9",
+                              fontSize: 12,
+                              opacity: 0.7,
+                            }}
+                          >
+                            hace 4 hora
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Usuario 3 */}
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 12,
+                          padding: "12px 0 0 0",
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: 40,
+                            height: 40,
+                            borderRadius: "50%",
+                            background:
+                              "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: "white",
+                            fontWeight: 700,
+                            fontSize: 14,
+                            border: "2px solid rgba(255,255,255,0.2)",
+                          }}
+                        >
+                          U3
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div
+                            style={{
+                              color: "#E6F1FF",
+                              fontSize: 14,
+                              fontWeight: 600,
+                              marginBottom: 2,
+                            }}
+                          >
+                            Usuario 3 actualizó de perfil.
+                          </div>
+                          <div
+                            style={{
+                              color: "#B7CCE9",
+                              fontSize: 12,
+                              opacity: 0.7,
+                            }}
+                          >
+                            hace 3 horas
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -3802,7 +6065,401 @@ class DashboardAdmin extends Component {
   color: var(--text-secondary);
   font-size: 13px;
 }
+
+/* ===== ESTILOS PARA MODALES DE EVENTOS ===== */
+.event-form {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.form-group-modal {
+  display: flex;
+  flex-direction: column;
+}
+.form-group-modal label {
+  color: #E6F1FF;
+  font-weight: 600;
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+.form-group-modal input,
+.form-group-modal select,
+.form-group-modal textarea {
+  padding: 12px;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 8px;
+  background: rgba(255,255,255,0.06);
+  color: #E6F1FF;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+.form-group-modal input:focus,
+.form-group-modal select:focus,
+.form-group-modal textarea:focus {
+  outline: none;
+  border-color: #00e5ff;
+  box-shadow: 0 0 0 3px rgba(0,229,255,0.1);
+  background: rgba(255,255,255,0.1);
+}
+.form-group-modal textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+/* Modal grande para listas */
+.course-modal.large {
+  width: 90%;
+  max-width: 800px;
+}
+.events-list {
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 16px;
+}
+.no-events {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+}
+.no-events p {
+  margin-top: 16px;
+  font-size: 16px;
+}
+.event-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  margin-bottom: 16px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+.event-item:hover {
+  background: rgba(255,255,255,0.1);
+  transform: translateY(-2px);
+}
+.event-info h4 {
+  color: #E6F1FF;
+  margin: 0 0 8px 0;
+  font-size: 18px;
+}
+.event-info p {
+  color: #B7CCE9;
+  margin: 4px 0;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.event-status {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-top: 8px;
+}
+.event-status.programado {
+  background: rgba(0,229,255,0.2);
+  color: #00e5ff;
+}
+.event-status.en-curso {
+  background: rgba(255,193,7,0.2);
+  color: #ffca28;
+}
+.event-status.completado {
+  background: rgba(76,175,80,0.2);
+  color: #66bb6a;
+}
+.event-status.cancelado {
+  background: rgba(244,67,54,0.2);
+  color: #f44336;
+}
+.event-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Confirmación de eliminación */
+.delete-confirmation {
+  text-align: center;
+  padding: 20px;
+}
+.delete-icon {
+  margin-bottom: 20px;
+}
+.delete-confirmation h4 {
+  color: #E6F1FF;
+  margin-bottom: 16px;
+}
+.delete-confirmation p {
+  color: #B7CCE9;
+  margin: 8px 0;
+}
+
+/* Recordatorios */
+.existing-reminders {
+  margin-top: 20px;
+  padding: 16px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 8px;
+}
+.existing-reminders h4 {
+  color: #E6F1FF;
+  margin-bottom: 12px;
+}
+.reminder-item {
+  padding: 8px 12px;
+  background: rgba(0,229,255,0.1);
+  border-radius: 6px;
+  margin-bottom: 8px;
+  color: #00e5ff;
+  font-size: 14px;
+}
+
+/* Gestión de asistentes */
+.attendees-manager {
+  padding: 16px;
+}
+.add-attendee h4 {
+  color: #E6F1FF;
+  margin-bottom: 12px;
+}
+.attendee-input-group {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.attendee-input-group input {
+  flex: 1;
+  padding: 12px;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 8px;
+  background: rgba(255,255,255,0.06);
+  color: #E6F1FF;
+}
+.attendees-list h4 {
+  color: #E6F1FF;
+  margin-bottom: 12px;
+}
+.attendee-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+.attendee-item span {
+  color: #B7CCE9;
+}
+
+/* Reportes */
+.reports-generator {
+  padding: 16px;
+}
+.report-filters h4 {
+  color: #E6F1FF;
+  margin-bottom: 16px;
+}
+.report-summary {
+  margin-top: 24px;
+}
+.report-summary h4 {
+  color: #E6F1FF;
+  margin-bottom: 16px;
+}
+.summary-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+.summary-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 12px;
+}
+.summary-card div {
+  display: flex;
+  flex-direction: column;
+}
+.summary-card span {
+  color: #B7CCE9;
+  font-size: 14px;
+}
+.summary-card strong {
+  color: #E6F1FF;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+/* Configuración de notificaciones */
+.notification-settings {
+  padding: 16px;
+}
+.setting-group {
+  margin-bottom: 24px;
+}
+.setting-group h4 {
+  color: #E6F1FF;
+  margin-bottom: 16px;
+}
+.setting-item {
+  margin-bottom: 12px;
+}
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #B7CCE9;
+  cursor: pointer;
+}
+.checkbox-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #00e5ff;
+}
+
+/* Botones adicionales */
+.btn-glass-danger {
+  background: linear-gradient(135deg, rgba(244,67,54,0.25), rgba(229,115,115,0.25));
+  border: 1px solid rgba(244,67,54,0.4);
+  color: #f44336;
+}
+.btn-glass-danger:hover {
+  background: linear-gradient(135deg, rgba(244,67,54,0.35), rgba(229,115,115,0.35));
+  border-color: rgba(244,67,54,0.6);
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  .event-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  .event-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  .summary-cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Tooltips personalizados */
+.custom-tooltip {
+  position: fixed;
+  z-index: 9999;
+  padding: 12px 16px;
+  border-radius: 12px;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: pre-line;
+  text-align: center;
+  transform: translateX(-50%) translateY(-100%);
+  animation: tooltipFadeIn 0.3s ease-out;
+  pointer-events: none;
+  max-width: 200px;
+  line-height: 1.4;
+}
+
+.custom-tooltip.primary {
+  background: linear-gradient(135deg, rgba(0,229,255,0.9), rgba(25,118,210,0.9));
+  border-color: rgba(0,229,255,0.5);
+  box-shadow: 0 20px 40px rgba(0,229,255,0.3);
+}
+
+.custom-tooltip.success {
+  background: linear-gradient(135deg, rgba(76,175,80,0.9), rgba(102,187,106,0.9));
+  border-color: rgba(76,175,80,0.5);
+  box-shadow: 0 20px 40px rgba(76,175,80,0.3);
+}
+
+.custom-tooltip.warning {
+  background: linear-gradient(135deg, rgba(255,193,7,0.9), rgba(255,202,40,0.9));
+  border-color: rgba(255,193,7,0.5);
+  box-shadow: 0 20px 40px rgba(255,193,7,0.3);
+  color: #0a1929;
+}
+
+.custom-tooltip.danger {
+  background: linear-gradient(135deg, rgba(244,67,54,0.9), rgba(229,115,115,0.9));
+  border-color: rgba(244,67,54,0.5);
+  box-shadow: 0 20px 40px rgba(244,67,54,0.3);
+}
+
+.custom-tooltip::before {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid;
+}
+
+.custom-tooltip.primary::before {
+  border-top-color: rgba(0,229,255,0.9);
+}
+
+.custom-tooltip.success::before {
+  border-top-color: rgba(76,175,80,0.9);
+}
+
+.custom-tooltip.warning::before {
+  border-top-color: rgba(255,193,7,0.9);
+}
+
+.custom-tooltip.danger::before {
+  border-top-color: rgba(244,67,54,0.9);
+}
+
+@keyframes tooltipFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-100%) scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-100%) scale(1);
+  }
+}
 `}</style>
+
+        {/* Tooltip personalizado */}
+        {this.state.customTooltip.show && (
+          <div
+            className={`custom-tooltip ${this.state.customTooltip.type}`}
+            style={{
+              left: this.state.customTooltip.x,
+              top: this.state.customTooltip.y,
+            }}
+          >
+            {this.state.customTooltip.text}
+          </div>
+        )}
       </>
     );
   }
