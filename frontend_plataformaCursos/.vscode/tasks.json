@@ -12,6 +12,17 @@
 			"type": "shell",
 			"command": "npm run -s build",
 			"group": "build"
+		},
+		{
+			"label": "Build frontend with Vite",
+			"type": "shell",
+			"command": "npm run build",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [
+				"$eslint-stylish"
+			],
+			"group": "build"
 		}
 	]
 }

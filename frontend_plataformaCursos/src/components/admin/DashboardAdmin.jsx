@@ -97,6 +97,7 @@ class DashboardAdmin extends Component {
       ],
       modulosDropdownOpen: false, // <-- Estado para el dropdown
       modulosDropdownCoords: { top: 0, left: 0 },
+      rendimientoExpanded: false, // <-- Estado para el panel de rendimiento del sistema
       coursesSearch: "",
       // Estados para paginación de cursos
       currentPage: 1,
@@ -2277,8 +2278,9 @@ class DashboardAdmin extends Component {
               left: 0,
               width: "100%",
               height: "100%",
-              backgroundColor: "rgba(0, 0, 0, 0.8)",
-              backdropFilter: "blur(10px)",
+              backgroundColor: "rgba(0, 0, 0, 0.85)",
+              backdropFilter: "blur(12px)",
+              WebkitBackdropFilter: "blur(12px)",
               display: "flex",
               justifyContent: "center",
               alignItems: "center",
@@ -2289,51 +2291,56 @@ class DashboardAdmin extends Component {
               className="course-modal-content"
               onClick={(e) => e.stopPropagation()}
               style={{
-                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                background: "rgba(255, 255, 255, 0.05)",
+                backdropFilter: "saturate(160%) blur(12px)",
+                WebkitBackdropFilter: "saturate(160%) blur(12px)",
                 borderRadius: 20,
                 padding: 30,
                 maxWidth: 600,
                 width: "90%",
                 maxHeight: "80vh",
                 overflow: "auto",
-                backdropFilter: "blur(20px)",
-                border: "1px solid rgba(255, 255, 255, 0.2)",
-                boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
+                border: "1px solid rgba(255, 255, 255, 0.12)",
+                boxShadow:
+                  "0 12px 32px rgba(0, 0, 0, 0.35), 0 2px 8px rgba(0, 0, 0, 0.14), 0 0 24px rgba(0, 229, 255, 0.06)",
               }}
             >
               <h3
                 style={{
                   margin: 0,
-                  marginBottom: 20,
-                  color: "#ffffff",
+                  marginBottom: 24,
+                  color: "#E6F1FF",
                   fontSize: 24,
                   fontWeight: 700,
                   textAlign: "center",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  gap: 10,
+                  gap: 12,
+                  textShadow: "0 2px 8px rgba(0, 0, 0, 0.3)",
                 }}
               >
-                <FaStickyNote size={24} />
+                <FaStickyNote size={24} style={{ color: "#2196F3" }} />
                 Notas y Anuncios
               </h3>
 
               {/* Contenido de notas movido del dashboard principal */}
               <div
                 style={{
-                  background: "rgba(255, 255, 255, 0.1)",
+                  background: "rgba(255, 255, 255, 0.03)",
                   backdropFilter: "blur(10px)",
-                  borderRadius: 15,
-                  padding: 20,
-                  border: "1px solid rgba(255, 255, 255, 0.2)",
+                  WebkitBackdropFilter: "blur(10px)",
+                  borderRadius: 16,
+                  padding: 24,
+                  border: "1px solid rgba(255, 255, 255, 0.08)",
+                  boxShadow: "0 4px 16px rgba(0, 0, 0, 0.2)",
                 }}
               >
                 <div
                   style={{
                     display: "flex",
-                    alignItems: "center",
-                    marginBottom: 15,
+                    alignItems: "flex-start",
+                    marginBottom: 20,
                   }}
                 >
                   <img
@@ -2343,8 +2350,9 @@ class DashboardAdmin extends Component {
                       width: 76,
                       height: 76,
                       borderRadius: "50%",
-                      marginRight: 15,
-                      border: "3px solid rgba(255, 255, 255, 0.3)",
+                      marginRight: 18,
+                      border: "3px solid rgba(33, 150, 243, 0.3)",
+                      boxShadow: "0 4px 12px rgba(0, 0, 0, 0.3)",
                     }}
                   />
                   <div style={{ flex: 1 }}>
@@ -2352,14 +2360,14 @@ class DashboardAdmin extends Component {
                       style={{
                         display: "flex",
                         alignItems: "center",
-                        marginBottom: 8,
+                        marginBottom: 10,
                       }}
                     >
                       <h6
                         style={{
                           color: "#E6F1FF",
                           margin: 0,
-                          fontSize: 16,
+                          fontSize: 17,
                           fontWeight: 600,
                         }}
                       >
@@ -2368,14 +2376,15 @@ class DashboardAdmin extends Component {
                       {this.state.anuncios[this.state.anuncioIndex].badge && (
                         <span
                           style={{
-                            background: "rgba(255, 193, 7, 0.2)",
-                            color: "#ffc107",
-                            padding: "2px 8px",
+                            background: "rgba(255, 193, 7, 0.15)",
+                            color: "#FFC107",
+                            padding: "4px 10px",
                             borderRadius: 12,
                             fontSize: 12,
                             fontWeight: 600,
-                            marginLeft: 10,
-                            border: "1px solid rgba(255, 193, 7, 0.3)",
+                            marginLeft: 12,
+                            border: "1px solid rgba(255, 193, 7, 0.25)",
+                            boxShadow: "0 2px 6px rgba(255, 193, 7, 0.2)",
                           }}
                         >
                           {this.state.anuncios[this.state.anuncioIndex].badge}
@@ -2387,7 +2396,7 @@ class DashboardAdmin extends Component {
                         color: "#B7CCE9",
                         fontSize: 14,
                         margin: 0,
-                        lineHeight: 1.4,
+                        lineHeight: 1.6,
                       }}
                     >
                       {this.state.anuncios[this.state.anuncioIndex].texto}
@@ -2401,43 +2410,53 @@ class DashboardAdmin extends Component {
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
-                    marginTop: 15,
-                    paddingTop: 15,
-                    borderTop: "1px solid rgba(255, 255, 255, 0.1)",
+                    marginTop: 20,
+                    paddingTop: 20,
+                    borderTop: "1px solid rgba(255, 255, 255, 0.06)",
                   }}
                 >
                   <button
                     onClick={this.handlePrevAnuncio}
                     style={{
-                      background: "rgba(255, 255, 255, 0.1)",
-                      border: "1px solid rgba(255, 255, 255, 0.2)",
-                      borderRadius: 8,
-                      padding: "8px 12px",
+                      background: "rgba(255, 255, 255, 0.05)",
+                      border: "1px solid rgba(255, 255, 255, 0.12)",
+                      borderRadius: 10,
+                      padding: "10px 16px",
                       color: "#E6F1FF",
                       cursor: "pointer",
-                      fontSize: 12,
+                      fontSize: 13,
                       fontWeight: 600,
                       display: "flex",
                       alignItems: "center",
-                      gap: 5,
-                      transition: "all 0.3s ease",
+                      gap: 6,
+                      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                      boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
                     }}
                     onMouseEnter={(e) => {
-                      e.target.style.background = "rgba(255, 255, 255, 0.2)";
+                      e.target.style.background = "rgba(255, 255, 255, 0.1)";
+                      e.target.style.transform = "translateY(-2px)";
+                      e.target.style.boxShadow =
+                        "0 4px 12px rgba(0, 0, 0, 0.2)";
                     }}
                     onMouseLeave={(e) => {
-                      e.target.style.background = "rgba(255, 255, 255, 0.1)";
+                      e.target.style.background = "rgba(255, 255, 255, 0.05)";
+                      e.target.style.transform = "translateY(0)";
+                      e.target.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.1)";
                     }}
                   >
-                    <FaChevronLeft size={10} />
+                    <FaChevronLeft size={12} />
                     Anterior
                   </button>
 
                   <div
                     style={{
                       color: "#B7CCE9",
-                      fontSize: 12,
+                      fontSize: 13,
                       fontWeight: 600,
+                      background: "rgba(255, 255, 255, 0.03)",
+                      padding: "6px 14px",
+                      borderRadius: 10,
+                      border: "1px solid rgba(255, 255, 255, 0.06)",
                     }}
                   >
                     {this.state.anuncioIndex + 1} de{" "}
@@ -2447,52 +2466,64 @@ class DashboardAdmin extends Component {
                   <button
                     onClick={this.handleNextAnuncio}
                     style={{
-                      background: "rgba(255, 255, 255, 0.1)",
-                      border: "1px solid rgba(255, 255, 255, 0.2)",
-                      borderRadius: 8,
-                      padding: "8px 12px",
+                      background: "rgba(255, 255, 255, 0.05)",
+                      border: "1px solid rgba(255, 255, 255, 0.12)",
+                      borderRadius: 10,
+                      padding: "10px 16px",
                       color: "#E6F1FF",
                       cursor: "pointer",
-                      fontSize: 12,
+                      fontSize: 13,
                       fontWeight: 600,
                       display: "flex",
                       alignItems: "center",
-                      gap: 5,
-                      transition: "all 0.3s ease",
+                      gap: 6,
+                      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                      boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
                     }}
                     onMouseEnter={(e) => {
-                      e.target.style.background = "rgba(255, 255, 255, 0.2)";
+                      e.target.style.background = "rgba(255, 255, 255, 0.1)";
+                      e.target.style.transform = "translateY(-2px)";
+                      e.target.style.boxShadow =
+                        "0 4px 12px rgba(0, 0, 0, 0.2)";
                     }}
                     onMouseLeave={(e) => {
-                      e.target.style.background = "rgba(255, 255, 255, 0.1)";
+                      e.target.style.background = "rgba(255, 255, 255, 0.05)";
+                      e.target.style.transform = "translateY(0)";
+                      e.target.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.1)";
                     }}
                   >
                     Siguiente
-                    <FaChevronRight size={10} />
+                    <FaChevronRight size={12} />
                   </button>
                 </div>
               </div>
 
               {/* Botón cerrar */}
-              <div style={{ textAlign: "center", marginTop: 20 }}>
+              <div style={{ textAlign: "center", marginTop: 24 }}>
                 <button
                   onClick={this.handleCloseNotesModal}
                   style={{
-                    background: "rgba(255, 255, 255, 0.2)",
-                    border: "1px solid rgba(255, 255, 255, 0.3)",
-                    borderRadius: 10,
-                    padding: "10px 20px",
-                    color: "#ffffff",
+                    background: "rgba(33, 150, 243, 0.15)",
+                    border: "1px solid rgba(33, 150, 243, 0.3)",
+                    borderRadius: 12,
+                    padding: "12px 32px",
+                    color: "#2196F3",
                     cursor: "pointer",
                     fontSize: 14,
                     fontWeight: 600,
-                    transition: "all 0.3s ease",
+                    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
                   }}
                   onMouseEnter={(e) => {
-                    e.target.style.background = "rgba(255, 255, 255, 0.3)";
+                    e.target.style.background = "rgba(33, 150, 243, 0.25)";
+                    e.target.style.transform = "translateY(-2px)";
+                    e.target.style.boxShadow =
+                      "0 4px 16px rgba(33, 150, 243, 0.3)";
                   }}
                   onMouseLeave={(e) => {
-                    e.target.style.background = "rgba(255, 255, 255, 0.2)";
+                    e.target.style.background = "rgba(33, 150, 243, 0.15)";
+                    e.target.style.transform = "translateY(0)";
+                    e.target.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.1)";
                   }}
                 >
                   Cerrar
@@ -2843,7 +2874,7 @@ class DashboardAdmin extends Component {
                   letterSpacing: 1,
                 }}
               >
-                v0.4
+                v0.5
               </span>
               {/* <button
                 style={{
@@ -2874,7 +2905,45 @@ class DashboardAdmin extends Component {
           <div className="hero-header">
             <div className="hero-inner">
               <div className="hero-kicker">// Panel · administrador</div>
-              <h1 className="hero-title">EXPERTPATH</h1>
+              <h1
+                className="hero-title"
+                style={{
+                  position: "relative",
+                  display: "inline-block",
+                  padding: "0",
+                  margin: "0 0 8px 0",
+                  background: "transparent",
+                  border: "none",
+                  boxShadow: "none",
+                }}
+              >
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "50%",
+                    left: "0",
+                    width: "100%",
+                    height: "80px",
+                    transform: "translateY(-50%)",
+                    backgroundImage: "url(/src/ola.png)",
+                    backgroundSize: "cover",
+                    backgroundPosition: "left center",
+                    backgroundRepeat: "no-repeat",
+                    opacity: 0.8,
+                    pointerEvents: "none",
+                    zIndex: 0,
+                  }}
+                ></div>
+                <span
+                  style={{
+                    position: "relative",
+                    zIndex: 1,
+                    textShadow: "0 2px 8px rgba(0, 0, 0, 0.8)",
+                  }}
+                >
+                  EXPERTPATH
+                </span>
+              </h1>
               <p className="hero-subtitle">
                 Plataforma de cursos · software para equipos
               </p>
@@ -4313,462 +4382,565 @@ class DashboardAdmin extends Component {
                     </div>
                   </div>
                 </div>
-                {/* Métricas de Usuario */}
-                <div style={{ marginTop: 40 }}>
-                  <h4
-                    style={{
-                      color: "#E6F1FF",
-                      fontWeight: 600,
-                      marginBottom: 20,
-                      textAlign: "center",
-                    }}
-                  >
-                    Métricas de Usuario
-                  </h4>
-
-                  {/* Card de Nuevos Usuarios */}
+              </div>
+            </div>
+            {/* Gráfica Profesional de Métricas del Proyecto - DESPLEGABLE */}
+            <div
+              style={{
+                position: "fixed",
+                bottom: 0,
+                left: this.state.sidebarOpen ? 280 : 80,
+                right: 0,
+                zIndex: 1000,
+                transition: "left 0.3s ease",
+              }}
+            >
+              {/* Barra colapsable */}
+              <div
+                onClick={() =>
+                  this.setState({
+                    rendimientoExpanded: !this.state.rendimientoExpanded,
+                  })
+                }
+                style={{
+                  background:
+                    "linear-gradient(135deg, rgba(15,23,42,0.98) 0%, rgba(30,41,59,0.98) 100%)",
+                  border: "1px solid rgba(59,130,246,0.3)",
+                  borderBottom: "none",
+                  borderTopLeftRadius: 20,
+                  borderTopRightRadius: 20,
+                  padding: "16px 40px",
+                  cursor: "pointer",
+                  boxShadow:
+                    "0 -10px 40px rgba(0,0,0,0.5), 0 0 60px rgba(59,130,246,0.15)",
+                  backdropFilter: "saturate(180%) blur(20px)",
+                  WebkitBackdropFilter: "saturate(180%) blur(20px)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  transition: "all 0.3s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background =
+                    "linear-gradient(135deg, rgba(15,23,42,1) 0%, rgba(30,41,59,1) 100%)";
+                  e.currentTarget.style.borderColor = "rgba(59,130,246,0.5)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background =
+                    "linear-gradient(135deg, rgba(15,23,42,0.98) 0%, rgba(30,41,59,0.98) 100%)";
+                  e.currentTarget.style.borderColor = "rgba(59,130,246,0.3)";
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
                   <div
                     style={{
-                      background: "rgba(255,255,255,0.06)",
-                      border: "1px solid rgba(0,229,255,0.2)",
-                      borderRadius: 16,
-                      padding: 24,
-                      marginBottom: 20,
-                      boxShadow:
-                        "0 8px 32px rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.08) inset",
-                      backdropFilter: "blur(10px)",
-                      position: "relative",
-                      overflow: "hidden",
+                      width: 48,
+                      height: 48,
+                      borderRadius: 12,
+                      background: "rgba(59,130,246,0.15)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      border: "1px solid rgba(59,130,246,0.3)",
                     }}
                   >
-                    {/* Efecto de brillo sutil */}
-                    <div
-                      style={{
-                        position: "absolute",
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        height: "1px",
-                        background:
-                          "linear-gradient(90deg, transparent, rgba(0,229,255,0.4), transparent)",
-                      }}
+                    <FaTachometerAlt
+                      style={{ color: "#3b82f6", fontSize: "1.5rem" }}
                     />
-
-                    <div style={{ marginBottom: 8 }}>
-                      <h5
-                        style={{
-                          color: "#E6F1FF",
-                          margin: 0,
-                          fontSize: 16,
-                          fontWeight: 600,
-                        }}
-                      >
-                        Nuevos Usuarios
-                      </h5>
-                      <p
-                        style={{
-                          color: "#B7CCE9",
-                          margin: 0,
-                          fontSize: 12,
-                          opacity: 0.8,
-                        }}
-                      >
-                        (Últimos 7 días)
-                      </p>
-                    </div>
-
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        marginBottom: 12,
-                      }}
-                    >
-                      <div
-                        style={{
-                          fontSize: 48,
-                          fontWeight: 800,
-                          color: "#fff",
-                          textShadow: "0 0 20px rgba(255,255,255,0.3)",
-                          lineHeight: 1,
-                        }}
-                      >
-                        82
-                      </div>
-
-                      {/* Gráfico mini de tendencia */}
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 8,
-                        }}
-                      >
-                        {/* SVG mini chart */}
-                        <svg width="60" height="30" viewBox="0 0 60 30">
-                          <polyline
-                            points="0,25 10,20 20,15 30,10 40,8 50,5 60,3"
-                            fill="none"
-                            stroke="#00e5ff"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                          <defs>
-                            <linearGradient
-                              id="chartGradient"
-                              x1="0%"
-                              y1="0%"
-                              x2="0%"
-                              y2="100%"
-                            >
-                              <stop
-                                offset="0%"
-                                stopColor="rgba(0,229,255,0.3)"
-                              />
-                              <stop
-                                offset="100%"
-                                stopColor="rgba(0,229,255,0.05)"
-                              />
-                            </linearGradient>
-                          </defs>
-                          <polygon
-                            points="0,25 10,20 20,15 30,10 40,8 50,5 60,3 60,30 0,30"
-                            fill="url(#chartGradient)"
-                          />
-                        </svg>
-                      </div>
-                    </div>
-
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 6,
-                      }}
-                    >
-                      <span
-                        style={{
-                          color: "#4ade80",
-                          fontSize: 14,
-                          fontWeight: 600,
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 4,
-                        }}
-                      >
-                        ↗ 15%
-                      </span>
-                      <span
-                        style={{
-                          color: "#B7CCE9",
-                          fontSize: 12,
-                        }}
-                      >
-                        vs la semana pasada
-                      </span>
-                    </div>
                   </div>
-
-                  {/* Card de Actividad Reciente */}
-                  <div
-                    style={{
-                      background: "rgba(255,255,255,0.06)",
-                      border: "1px solid rgba(255,255,255,0.12)",
-                      borderRadius: 16,
-                      padding: 24,
-                      boxShadow:
-                        "0 8px 32px rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.08) inset",
-                      backdropFilter: "blur(10px)",
-                    }}
-                  >
-                    <h5
+                  <div>
+                    <h2
                       style={{
                         color: "#E6F1FF",
-                        margin: "0 0 20px 0",
-                        fontSize: 16,
-                        fontWeight: 600,
+                        fontWeight: 700,
+                        margin: 0,
+                        fontSize: "1.5rem",
                       }}
                     >
-                      Actividad Reciente
-                    </h5>
-
-                    <div
+                      Rendimiento del Sistema
+                    </h2>
+                    <p
                       style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 16,
+                        color: "#94a3b8",
+                        margin: 0,
+                        fontSize: "0.85rem",
                       }}
                     >
-                      {/* Usuario 1 */}
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 12,
-                          padding: "12px 0",
-                          borderBottom: "1px solid rgba(255,255,255,0.08)",
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: 40,
-                            height: 40,
-                            borderRadius: "50%",
-                            background:
-                              "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            color: "white",
-                            fontWeight: 700,
-                            fontSize: 14,
-                            border: "2px solid rgba(255,255,255,0.2)",
-                          }}
-                        >
-                          U5
-                        </div>
-                        <div style={{ flex: 1 }}>
-                          <div
-                            style={{
-                              color: "#E6F1FF",
-                              fontSize: 14,
-                              fontWeight: 600,
-                              marginBottom: 2,
-                            }}
-                          >
-                            Usuario 5 se registró.
-                          </div>
-                          <div
-                            style={{
-                              color: "#B7CCE9",
-                              fontSize: 12,
-                              opacity: 0.7,
-                            }}
-                          >
-                            hace 10 minutos
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Usuario 2 */}
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 12,
-                          padding: "12px 0",
-                          borderBottom: "1px solid rgba(255,255,255,0.08)",
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: 40,
-                            height: 40,
-                            borderRadius: "50%",
-                            background:
-                              "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            color: "white",
-                            fontWeight: 700,
-                            fontSize: 14,
-                            border: "2px solid rgba(255,255,255,0.2)",
-                          }}
-                        >
-                          U4
-                        </div>
-                        <div style={{ flex: 1 }}>
-                          <div
-                            style={{
-                              color: "#E6F1FF",
-                              fontSize: 14,
-                              fontWeight: 600,
-                              marginBottom: 2,
-                            }}
-                          >
-                            Usuario 4 se registró.
-                          </div>
-                          <div
-                            style={{
-                              color: "#B7CCE9",
-                              fontSize: 12,
-                              opacity: 0.7,
-                            }}
-                          >
-                            hace 4 hora
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Usuario 3 */}
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 12,
-                          padding: "12px 0 0 0",
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: 40,
-                            height: 40,
-                            borderRadius: "50%",
-                            background:
-                              "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            color: "white",
-                            fontWeight: 700,
-                            fontSize: 14,
-                            border: "2px solid rgba(255,255,255,0.2)",
-                          }}
-                        >
-                          U3
-                        </div>
-                        <div style={{ flex: 1 }}>
-                          <div
-                            style={{
-                              color: "#E6F1FF",
-                              fontSize: 14,
-                              fontWeight: 600,
-                              marginBottom: 2,
-                            }}
-                          >
-                            Usuario 3 actualizó de perfil.
-                          </div>
-                          <div
-                            style={{
-                              color: "#B7CCE9",
-                              fontSize: 12,
-                              opacity: 0.7,
-                            }}
-                          >
-                            hace 3 horas
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                      {this.state.rendimientoExpanded
+                        ? "Click para contraer"
+                        : "Click para ver métricas detalladas"}
+                    </p>
+                  </div>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                  <span
+                    style={{
+                      background: "rgba(34,197,94,0.15)",
+                      color: "#4ade80",
+                      padding: "8px 18px",
+                      borderRadius: "20px",
+                      fontSize: "0.85rem",
+                      fontWeight: 600,
+                      border: "1px solid rgba(34,197,94,0.3)",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                    }}
+                  >
+                    <FaCheckCircle size={14} />
+                    En Tiempo Real
+                  </span>
+                  <div
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 10,
+                      background: "rgba(59,130,246,0.15)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      border: "1px solid rgba(59,130,246,0.3)",
+                      transition: "transform 0.3s ease",
+                      transform: this.state.rendimientoExpanded
+                        ? "rotate(180deg)"
+                        : "rotate(0deg)",
+                    }}
+                  >
+                    <FaChevronDown style={{ color: "#3b82f6", fontSize: 18 }} />
                   </div>
                 </div>
               </div>
-            </div>
-            {/* Más secciones para hacer scroll */}
-            <div style={{ marginTop: 64, marginBottom: 64 }}>
-              <h2
-                style={{ color: "#E6F1FF", fontWeight: 700, marginBottom: 24 }}
-              >
-                Reportes y Actividad Reciente
-              </h2>
-              <div style={{ display: "flex", gap: 32, flexWrap: "wrap" }}>
-                {[...Array(6)].map((_, i) => (
-                  <div
-                    key={i}
-                    className="report-card-custom"
-                    style={{ minWidth: 320, flex: 1, marginBottom: 24 }}
-                  >
-                    <div className="report-card-logo">
-                      <span className="report-card-logo-circle">EP</span>
-                    </div>
-                    <div className="report-card-title">REPORTE</div>
-                    <div className="report-card-desc">
-                      Actividad reciente, cambios en cursos, usuarios o eventos.
-                      Detalles y métricas relevantes para el administrador.
-                    </div>
-                    <div className="report-card-divider"></div>
-                    <button className="report-card-btn">
-                      VER DETALLES{" "}
-                      <span style={{ marginLeft: 6, fontWeight: 700 }}>
-                        &rarr;
-                      </span>
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-            {/* Inserto el gráfico en la sección de estadísticas o debajo de las cards: */}
-            <div
-              style={{
-                maxWidth: 900,
-                margin: "0 auto 40px auto",
-                background: "rgba(255,255,255,0.06)",
-                border: "1px solid rgba(255,255,255,0.12)",
-                borderRadius: 16,
-                boxShadow:
-                  "0 12px 32px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.14), 0 0 0 1px rgba(255,255,255,0.08) inset, 0 0 24px rgba(0,229,255,0.08)",
-                padding: 32,
-                backdropFilter: "blur(10px)",
-                WebkitBackdropFilter: "blur(10px)",
-              }}
-            >
-              <h3
+
+              {/* Contenido expandible */}
+              <div
                 style={{
-                  color: "#E6F1FF",
-                  fontWeight: 700,
-                  marginBottom: 18,
-                  textAlign: "center",
+                  maxHeight: this.state.rendimientoExpanded ? "85vh" : "0",
+                  overflow: "hidden",
+                  transition: "max-height 0.5s ease",
+                  background:
+                    "linear-gradient(135deg, rgba(15,23,42,0.98) 0%, rgba(30,41,59,0.98) 100%)",
+                  backdropFilter: "saturate(180%) blur(30px)",
+                  WebkitBackdropFilter: "saturate(180%) blur(30px)",
+                  borderTop: "1px solid rgba(59,130,246,0.2)",
                 }}
               >
-                Actividad Administrativa (2025)
-              </h3>
-              <LineChart
-                height={320}
-                series={[
-                  {
-                    data: [5, 7, 8, 10, 12, 14, 13, 15, 16, 18, 20, 22],
-                    label: "Reportes",
-                    color: "#1976d2",
-                    area: true,
-                  },
-                  {
-                    data: [2, 3, 4, 5, 6, 7, 6, 8, 9, 10, 11, 12],
-                    label: "Eventos",
-                    color: "#ff9800",
-                    area: true,
-                  },
-                  {
-                    data: [1, 2, 2, 3, 4, 4, 5, 5, 6, 7, 7, 8],
-                    label: "Notas/Anuncios",
-                    color: "#8e24aa",
-                    area: true,
-                  },
-                ]}
-                xAxis={[
-                  {
-                    scaleType: "point",
-                    data: [
-                      "Ene",
-                      "Feb",
-                      "Mar",
-                      "Abr",
-                      "May",
-                      "Jun",
-                      "Jul",
-                      "Ago",
-                      "Sep",
-                      "Oct",
-                      "Nov",
-                      "Dic",
-                    ],
-                    label: "Mes",
-                  },
-                ]}
-                yAxis={[{ label: "Cantidad" }]}
-                grid={{ vertical: true, horizontal: true }}
-                sx={{
-                  background: "transparent",
-                  borderRadius: 3,
-                  boxShadow: 0,
-                  "--ChartsLegend-rootOffsetY": "12px",
-                  "--ChartsLegend-rootOffsetX": "0px",
-                  "--ChartsLegend-labelFontWeight": 600,
-                  "--ChartsLegend-labelFontSize": "15px",
-                }}
-              />
+                <div
+                  style={{
+                    padding: 40,
+                    overflowY: "auto",
+                    maxHeight: "85vh",
+                  }}
+                >
+                  {/* Indicadores KPI */}
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(4, 1fr)",
+                      gap: "16px",
+                      marginBottom: 32,
+                    }}
+                  >
+                    {[
+                      {
+                        label: "Total Usuarios",
+                        value: "341",
+                        change: "+15.3%",
+                        icon: <FaUsers />,
+                        color: "#3b82f6",
+                        bg: "rgba(59,130,246,0.15)",
+                      },
+                      {
+                        label: "Cursos Activos",
+                        value: "6",
+                        change: "+2",
+                        icon: <FaBook />,
+                        color: "#8b5cf6",
+                        bg: "rgba(139,92,246,0.15)",
+                      },
+                      {
+                        label: "Eventos del Mes",
+                        value: "12",
+                        change: "+8.5%",
+                        icon: <FaCalendarAlt />,
+                        color: "#f59e0b",
+                        bg: "rgba(245,158,11,0.15)",
+                      },
+                      {
+                        label: "Satisfacción",
+                        value: "4.7★",
+                        change: "+0.3",
+                        icon: <FaStar />,
+                        color: "#22c55e",
+                        bg: "rgba(34,197,94,0.15)",
+                      },
+                    ].map((kpi, index) => (
+                      <div
+                        key={index}
+                        style={{
+                          background:
+                            "linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)",
+                          border: `1px solid ${kpi.color}30`,
+                          borderRadius: "16px",
+                          padding: "20px",
+                          transition: "all 0.3s ease",
+                          cursor: "pointer",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform = "translateY(-4px)";
+                          e.currentTarget.style.boxShadow = `0 12px 32px ${kpi.color}40`;
+                          e.currentTarget.style.borderColor = `${kpi.color}60`;
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = "translateY(0)";
+                          e.currentTarget.style.boxShadow = "none";
+                          e.currentTarget.style.borderColor = `${kpi.color}30`;
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            marginBottom: "12px",
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: "48px",
+                              height: "48px",
+                              borderRadius: "12px",
+                              background: kpi.bg,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              color: kpi.color,
+                              fontSize: "1.5rem",
+                            }}
+                          >
+                            {kpi.icon}
+                          </div>
+                          <span
+                            style={{
+                              background: "rgba(34,197,94,0.15)",
+                              color: "#4ade80",
+                              padding: "4px 10px",
+                              borderRadius: "12px",
+                              fontSize: "0.75rem",
+                              fontWeight: 700,
+                              border: "1px solid rgba(34,197,94,0.3)",
+                            }}
+                          >
+                            {kpi.change}
+                          </span>
+                        </div>
+                        <h3
+                          style={{
+                            color: "#E6F1FF",
+                            fontSize: "2rem",
+                            fontWeight: 700,
+                            margin: "8px 0",
+                            lineHeight: 1,
+                          }}
+                        >
+                          {kpi.value}
+                        </h3>
+                        <p
+                          style={{
+                            color: "#94a3b8",
+                            fontSize: "0.85rem",
+                            margin: 0,
+                            fontWeight: 500,
+                          }}
+                        >
+                          {kpi.label}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Gráfica LineChart Mejorada */}
+                  <div
+                    style={{
+                      background:
+                        "linear-gradient(135deg, rgba(15,23,42,0.6) 0%, rgba(30,41,59,0.4) 100%)",
+                      borderRadius: "20px",
+                      padding: "28px",
+                      border: "1px solid rgba(255,255,255,0.08)",
+                      boxShadow: "inset 0 2px 8px rgba(0,0,0,0.3)",
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginBottom: "24px",
+                      }}
+                    >
+                      <h3
+                        style={{
+                          color: "#E6F1FF",
+                          fontWeight: 600,
+                          margin: 0,
+                          fontSize: "1.2rem",
+                        }}
+                      >
+                        Evolución de Actividades
+                      </h3>
+                      <div style={{ display: "flex", gap: "16px" }}>
+                        {[
+                          {
+                            label: "Nuevos Usuarios",
+                            color: "#3b82f6",
+                            value: "22",
+                          },
+                          {
+                            label: "Cursos Creados",
+                            color: "#8b5cf6",
+                            value: "2",
+                          },
+                          { label: "Eventos", color: "#f59e0b", value: "12" },
+                          {
+                            label: "Certificaciones",
+                            color: "#22c55e",
+                            value: "8",
+                          },
+                        ].map((legend, idx) => (
+                          <div
+                            key={idx}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "8px",
+                            }}
+                          >
+                            <div
+                              style={{
+                                width: "12px",
+                                height: "12px",
+                                borderRadius: "3px",
+                                background: legend.color,
+                                boxShadow: `0 0 10px ${legend.color}60`,
+                              }}
+                            />
+                            <span
+                              style={{
+                                color: "#94a3b8",
+                                fontSize: "0.8rem",
+                                fontWeight: 500,
+                              }}
+                            >
+                              {legend.label}
+                            </span>
+                            <span
+                              style={{
+                                color: "#E6F1FF",
+                                fontSize: "0.85rem",
+                                fontWeight: 700,
+                                background: `${legend.color}20`,
+                                padding: "2px 8px",
+                                borderRadius: "6px",
+                              }}
+                            >
+                              {legend.value}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <LineChart
+                      height={380}
+                      series={[
+                        {
+                          data: [5, 7, 8, 10, 12, 14, 13, 15, 16, 18, 20, 22],
+                          label: "Nuevos Usuarios",
+                          color: "#3b82f6",
+                          area: true,
+                          curve: "monotoneX",
+                          showMark: true,
+                        },
+                        {
+                          data: [1, 1, 1, 2, 2, 2, 3, 3, 4, 5, 5, 6],
+                          label: "Cursos Creados",
+                          color: "#8b5cf6",
+                          area: true,
+                          curve: "monotoneX",
+                          showMark: true,
+                        },
+                        {
+                          data: [2, 3, 4, 5, 6, 7, 6, 8, 9, 10, 11, 12],
+                          label: "Eventos",
+                          color: "#f59e0b",
+                          area: true,
+                          curve: "monotoneX",
+                          showMark: true,
+                        },
+                        {
+                          data: [1, 2, 2, 3, 4, 4, 5, 5, 6, 7, 7, 8],
+                          label: "Certificaciones",
+                          color: "#22c55e",
+                          area: true,
+                          curve: "monotoneX",
+                          showMark: true,
+                        },
+                      ]}
+                      xAxis={[
+                        {
+                          scaleType: "point",
+                          data: [
+                            "Ene",
+                            "Feb",
+                            "Mar",
+                            "Abr",
+                            "May",
+                            "Jun",
+                            "Jul",
+                            "Ago",
+                            "Sep",
+                            "Oct",
+                            "Nov",
+                            "Dic",
+                          ],
+                          label: "Mes",
+                          labelStyle: {
+                            fill: "#94a3b8",
+                            fontSize: 14,
+                            fontWeight: 600,
+                          },
+                          tickLabelStyle: {
+                            fill: "#64748b",
+                            fontSize: 12,
+                          },
+                        },
+                      ]}
+                      yAxis={[
+                        {
+                          label: "Cantidad",
+                          labelStyle: {
+                            fill: "#94a3b8",
+                            fontSize: 14,
+                            fontWeight: 600,
+                          },
+                          tickLabelStyle: {
+                            fill: "#64748b",
+                            fontSize: 12,
+                          },
+                        },
+                      ]}
+                      grid={{
+                        vertical: true,
+                        horizontal: true,
+                      }}
+                      sx={{
+                        background: "transparent",
+                        borderRadius: 3,
+                        "& .MuiChartsAxis-line": {
+                          stroke: "rgba(148,163,184,0.2)",
+                        },
+                        "& .MuiChartsGrid-line": {
+                          stroke: "rgba(148,163,184,0.1)",
+                        },
+                        "& .MuiChartsAxis-tick": {
+                          stroke: "rgba(148,163,184,0.3)",
+                        },
+                        "& .MuiChartsLegend-root": {
+                          display: "none",
+                        },
+                      }}
+                    />
+                  </div>
+
+                  {/* Insights y estadísticas adicionales */}
+                  <div
+                    style={{
+                      marginTop: "28px",
+                      display: "grid",
+                      gridTemplateColumns: "repeat(3, 1fr)",
+                      gap: "16px",
+                    }}
+                  >
+                    {[
+                      {
+                        title: "Crecimiento Mensual",
+                        value: "+18.4%",
+                        subtitle: "vs mes anterior",
+                        icon: "📈",
+                        trend: "up",
+                      },
+                      {
+                        title: "Tasa de Completitud",
+                        value: "87%",
+                        subtitle: "cursos finalizados",
+                        icon: "✅",
+                        trend: "up",
+                      },
+                      {
+                        title: "Tiempo Promedio",
+                        value: "2.3h",
+                        subtitle: "por sesión",
+                        icon: "⏱️",
+                        trend: "neutral",
+                      },
+                    ].map((insight, index) => (
+                      <div
+                        key={index}
+                        style={{
+                          background:
+                            "linear-gradient(135deg, rgba(59,130,246,0.05) 0%, rgba(139,92,246,0.05) 100%)",
+                          border: "1px solid rgba(255,255,255,0.08)",
+                          borderRadius: "14px",
+                          padding: "18px",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "14px",
+                        }}
+                      >
+                        <div
+                          style={{
+                            fontSize: "2rem",
+                            filter: "grayscale(0%)",
+                          }}
+                        >
+                          {insight.icon}
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <p
+                            style={{
+                              color: "#94a3b8",
+                              fontSize: "0.8rem",
+                              margin: "0 0 4px 0",
+                              fontWeight: 500,
+                            }}
+                          >
+                            {insight.title}
+                          </p>
+                          <h4
+                            style={{
+                              color: "#E6F1FF",
+                              fontSize: "1.5rem",
+                              fontWeight: 700,
+                              margin: "0 0 4px 0",
+                              lineHeight: 1,
+                            }}
+                          >
+                            {insight.value}
+                          </h4>
+                          <p
+                            style={{
+                              color: "#64748b",
+                              fontSize: "0.75rem",
+                              margin: 0,
+                            }}
+                          >
+                            {insight.subtitle}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

@@ -8,6 +8,7 @@ import Evidencias from "./components/modules/Evidencias";
 import ReportesMetricas from "./components/modules/ReportesMetricas";
 import Expedientes from "./components/modules/Expedientes";
 import CumplimientoSTPS from "./components/modules/CumplimientoSTPS";
+import Usuarios from "./components/modules/Usuarios";
 
 class AppRoutes extends React.Component {
   render() {
@@ -22,6 +23,7 @@ class AppRoutes extends React.Component {
           <Route path="/reportes-metricas" element={<ReportesMetricas />} />
           <Route path="/expedientes" element={<Expedientes />} />
           <Route path="/cumplimiento-stps" element={<CumplimientoSTPS />} />
+          <Route path="/usuarios" element={<Usuarios />} />
         </Routes>
       </Router>
     );
