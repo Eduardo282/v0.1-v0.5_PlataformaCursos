@@ -1,5 +1,6 @@
 const client = require("../config/database");
 const bcrypt = require("bcryptjs");
+const { generateToken } = require("../middleware/auth");
 
 // Login function (validar contra tabla de registro y contraseña encriptada)
 const login = async ({ email, password, alias }) => {
@@ -27,15 +28,23 @@ const login = async ({ email, password, alias }) => {
     const displayName = alias && alias.trim() !== "" ? alias : user.name;
     const nowIso = new Date().toISOString();
 
-    return {
+    // Generar token JWT
+    const userData = {
       id: user.id,
-      name: user.name, // Nombre original del signup (para fallback)
+      name: user.name,
       lastname: user.lastname ?? null,
       email: user.email,
-      alias: displayName, // Alias preferido o nombre del signup
-      active: 1,
+      alias: displayName,
       current_role: "admin",
+      active: 1,
       last_access: nowIso,
+    };
+
+    const token = generateToken(userData, "24h");
+
+    return {
+      ...userData,
+      token, // ← Token JWT incluido aquí
       message: "Inicio de sesion exitoso",
     };
   } catch (err) {
@@ -63,8 +72,26 @@ const signup = ({ name, lastname, email, password }) => {
       client
         .query(query, values)
         .then(([result]) => {
+          // Generar token JWT para auto-login después del registro
+          const userData = {
+            id: result.insertId,
+            name,
+            lastname,
+            email,
+            alias: name,
+            current_role: "admin",
+            active: 1,
+          };
+
+          const token = generateToken(userData, "24h");
+
           resolve({
             id: result.insertId.toString(),
+            name,
+            lastname,
+            email,
+            alias: name,
+            token, // ← Token JWT incluido aquí
             message: "Registro exitoso",
           });
         })

@@ -1,5 +1,6 @@
 type Query {
   login(email: String!, password: String!, alias: String): user
+  verifyResetToken(token: String!): TokenVerification
 }
 
 type Mutation {
@@ -9,6 +10,8 @@ type Mutation {
     email: String!
     password: String!
   ): signup_data
+  requestPasswordReset(email: String!): PasswordResetResponse
+  resetPassword(token: String!, newPassword: String!): PasswordResetResponse
 }
 
 type user {
@@ -20,11 +23,29 @@ type user {
   active: Int
   current_role: String
   last_access: String
+  token: String
   message: String
 }
 
 type signup_data {
   id: String
+  name: String
+  lastname: String
+  email: String
+  alias: String
+  token: String
+  message: String
+}
+
+type PasswordResetResponse {
+  success: Boolean
+  message: String
+}
+
+type TokenVerification {
+  valid: Boolean
+  email: String
+  userName: String
   message: String
 }
 

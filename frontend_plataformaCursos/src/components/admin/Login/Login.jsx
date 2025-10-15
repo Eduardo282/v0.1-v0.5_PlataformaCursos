@@ -1,6 +1,7 @@
 import React, { Component } from "react";
 import { Navigate } from "react-router-dom";
 import actionApi from "../actionApi/actionApi.js";
+import { saveSession } from "../../../services/authService.js";
 
 class Login extends Component {
   constructor(props) {
@@ -54,16 +55,28 @@ class Login extends Component {
       .then((response) => {
         const data = response.data?.data?.login;
         if (data && data.message && data.message.includes("exitoso")) {
+          // Verificar que el backend envió el token JWT
+          if (!data.token) {
+            console.warn("[LOGIN] Backend no envió token JWT");
+            this.setState({ error: "Error en autenticación (sin token)" });
+            return;
+          }
+
           // Simular campos de la tabla admin_login
           const userData = {
-            id: data.id || undefined, // si lo tienes disponible
+            id: data.id || undefined,
             name: data.name,
             email: data.email,
-            alias: data.alias, // Usar alias del backend (que puede ser el alias ingresado o el nombre original)
+            alias: data.alias,
             current_role: data.role || "admin",
             active: 1,
             last_access: new Date().toISOString(),
           };
+
+          // ✅ GUARDAR TOKEN JWT Y DATOS DE USUARIO EN LOCALSTORAGE
+          saveSession(data.token, userData);
+          console.log("[LOGIN] Token guardado en localStorage");
+
           this.setState({ loggedIn: true, userData });
         } else {
           this.setState({ error: data?.message || "Error en login" });
@@ -132,17 +145,36 @@ class Login extends Component {
       return;
     }
 
-    // Aquí puedes hacer la llamada a tu API para enviar el email de recuperación
-    // Por ahora simularemos el envío
-    this.setState({
-      forgotError: "",
-      forgotMessage: `Se ha enviado un enlace de recuperación a ${forgotEmail}. Por favor revisa tu correo.`,
-    });
+    // Llamar a la API para enviar el email de recuperación
+    actionApi
+      .requestPasswordReset(forgotEmail)
+      .then((response) => {
+        const data = response.data?.data?.requestPasswordReset;
+        if (data?.success) {
+          this.setState({
+            forgotError: "",
+            forgotMessage: `Se ha enviado un enlace de recuperación a ${forgotEmail}. Por favor revisa tu correo.`,
+          });
 
-    // Cerrar el modal después de 3 segundos
-    setTimeout(() => {
-      this.handleCloseForgotPassword();
-    }, 3000);
+          // Cerrar el modal después de 3 segundos
+          setTimeout(() => {
+            this.handleCloseForgotPassword();
+          }, 3000);
+        } else {
+          this.setState({
+            forgotError:
+              data?.message || "Error al enviar email de recuperación",
+            forgotMessage: "",
+          });
+        }
+      })
+      .catch((error) => {
+        console.error("[FORGOT_PASSWORD] Error:", error);
+        this.setState({
+          forgotError: "Error al procesar solicitud. Intenta nuevamente.",
+          forgotMessage: "",
+        });
+      });
   };
 
   render() {

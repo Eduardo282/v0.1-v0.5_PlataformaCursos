@@ -20,12 +20,15 @@
     "@graphql-tools/schema": "^10.0.23",
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
+    "crypto": "^1.0.1",
     "dotenv": "^17.2.0",
     "express": "^5.1.0",
     "express-graphql": "^0.12.0",
     "graphql": "^16.11.0",
     "jsonwebtoken": "^9.0.2",
     "mysql2": "^3.14.2",
+    "nodemailer": "^7.0.9",
+    "resend": "^6.1.2",
     "subscriptions-transport-ws": "^0.11.0"
   },
   "devDependencies": {

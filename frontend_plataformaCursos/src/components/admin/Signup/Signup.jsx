@@ -2,6 +2,7 @@ import React, { Component } from "react";
 import { Navigate } from "react-router-dom";
 import actionApi from "../actionApi/actionApi.js";
 import { withRouter } from "../../utils/withRouter.jsx";
+import { saveSession } from "../../../services/authService.js";
 
 class Signup extends Component {
   constructor(props) {
@@ -91,8 +92,28 @@ class Signup extends Component {
         (data.message?.toLowerCase() === "registro exitoso" || data.id)
       ) {
         console.log("[FRONTEND] Registro exitoso, id:", data.id);
+
+        // ✅ Si el backend retorna token, guardar sesión (auto-login)
+        if (data.token) {
+          const userData = {
+            id: data.id,
+            name: data.name,
+            lastname: data.lastname,
+            email: data.email,
+            alias: data.alias || data.name,
+            current_role: "admin",
+            active: 1,
+          };
+          saveSession(data.token, userData);
+          console.log("[FRONTEND] Token guardado, redirigiendo a dashboard");
+          // Redirigir directo a dashboard ya que tiene token
+          this.setState({ redirectToLogin: false });
+          window.location.href = "/dashboardAdmin";
+          return;
+        }
+
+        // Si no hay token, mostrar mensaje y redirigir a login
         alert("Usuario registrado exitosamente");
-        // Redirección confiable vía render
         console.log("[FRONTEND] Activando redirect a /login");
         this.setState({ redirectToLogin: true });
       } else {
